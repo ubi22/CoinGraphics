@@ -1,24 +1,30 @@
-from kivy.lang import Builder
-from kivymd.app import MDApp
 from kivymd.uix.tab import MDTabsBase
 from kivymd.uix.floatlayout import MDFloatLayout
 from kivy.core.clipboard import Clipboard
-import os
-from kivymd.uix.label import MDLabel
 from kivy.core.window import Window
-from kivymd.uix.filemanager import MDFileManager
-from kivymd.toast import toast
+from kivy.lang import Builder
+from kivy.properties import ObjectProperty
+from kivymd.app import MDApp
+from kivy.uix.boxlayout import BoxLayout
 from kivymd.uix.button import MDFlatButton
 from kivymd.uix.dialog import MDDialog
-from kivymd.uix.boxlayout import MDBoxLayout
-from kivymd.uix.textfield import MDTextField
-from kivymd.uix.card import MDCard
-Window.size = (480, 800)
+from kivymd.uix.expansionpanel import MDExpansionPanel, MDExpansionPanelThreeLine
+Window.size = (520, 900)
+
 
 class Tab(MDFloatLayout, MDTabsBase):
-    pass
+    '''Class implementing content for a tab.'''
+
+
+class ContentNavigationDrawer(BoxLayout):
+    screen_manager = ObjectProperty()
+    nav_drawer = ObjectProperty()
+
 
 class MoneyTest(MDApp):
+
+    def notification(self):
+        self.root.ids.notification_bell.icon = 'bell-ring'
 
     def build(self):
         self.theme_cls.theme_style = "Dark"
@@ -29,23 +35,11 @@ class MoneyTest(MDApp):
         Clipboard.copy(self.root.ids.id_users.text)
 
     def screen(self, screen_name: str):
-        self.root.current = screen_name
+        self.root.ids.screen_manager.current = screen_name
 
     def login_main_page(self):
-        self.screen("nig")
+        self.screen("main_screen")
 
-    def on_tab_switch(
-            self, instance_tabs, instance_tab, instance_tab_label, tab_text
-    ):
-        '''Called when switching tabs.
-
-        :type instance_tabs: <kivymd.uix.tab.MDTabs object>;
-        :param instance_tab: <__main__.Tab object>;
-        :param instance_tab_label: <kivymd.uix.tab.MDTabsLabel object>;
-        :param tab_text: text or name icon of tab;
-        '''
-
-        instance_tab.ids.label.text = tab_text
 
 app = MoneyTest()
 app.run()
