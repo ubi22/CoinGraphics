@@ -129,7 +129,7 @@ Screen:
                     MDLabel:
                         size_hint: 1, .2
                         id: balance_user
-                        text: '15 KK'
+                        text: "Васильев Андрей Витальевич"
                         font_size: '40sp'
                         halign: 'center'
                         pos_hint: {'center_x': .5}
@@ -207,6 +207,54 @@ Screen:
                 name: "spending"
                 MDLabel:
                     text: "Что хотите купить?"
+            MDScreen:
+                name: "admin_screen"
+                MDCard:
+                    size_hint: .8, .88
+                    pos_hint: {"center_x": .5, "center_y": .5}
+                    elevation: 6
+                    orientation: "vertical"
+                    MDFloatLayout:
+
+                        MDIconButton:
+                            id: iconadmin
+                            pos_hint: {"center_x": .5, "center_y": .87}
+                            icon_size: "120sp"
+                            icon: "account-circle-outline"
+                            on_release: app.file_manager_open(1)
+
+                        MDLabel:
+                            text: "Васильев\nАндрей Витальевич"
+                            font_style: "Button"
+                            size_hint_y: None
+                            halign: "center"
+                            font_size: "30sp"
+                            pos_hint: {"center_x": .5, "center_y": .74}
+                        MDLabel:
+                            text: "02.10.2009"
+                            font_style: "Subtitle1"
+                            size_hint_y: None
+                            halign: "center"
+                            font_size: "23sp"
+                            pos_hint: {"center_x": .5, "center_y": .665}
+                        ScrollView:
+                            pos_hint: {"center_x": .5, "center_y": .15}
+                            MDList:
+                                scroll_y: None
+                                OneLineAvatarListItem:
+                                    on_release: app.screen("settingadmin")
+                                    text: "account-group
+                                    IconLeftWidget:
+                                        icon: "account-plus"
+                                OneLineAvatarListItem:
+                                    text: "Выйти"
+                                    IconLeftWidget:
+                                        icon: "exit-to-app"
+                        MDFillRoundFlatIconButton:
+                            icon: 'exit-to-app'
+                            text: 'Выйти'
+                            pos_hint: {"center_x": .5, "center_y": .12}
+
 
         MDNavigationDrawer:
             id: nav_drawer
