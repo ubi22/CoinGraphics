@@ -56,9 +56,9 @@ class MoneyTest(MDApp):
 
     def login_main_page(self):
         if not self.root.ids.login.text == "admin":
-            self.screen("admin_screen")
+            self.screen('main_screen')
         else:
-            self.screen("main_screen")
+            self.screen("admin_screen")
 
 
 app = MoneyTest()
