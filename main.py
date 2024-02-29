@@ -58,79 +58,79 @@ class ContentNavigationDrawer(BoxLayout):
 class MenuHeader(MDBoxLayout):
     '''An instance of the class that will be added to the menu header.'''
 
+
 class MoneyTest(MDApp):
+    level = ""
 
     def notification(self):
         self.root.ids.notification_bell.icon = 'bell-ring'
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    def menu_callback(self, xs):
+        self.x = xs
+
+    def on_start(self):
+        charge_contests = MDDataTable(
+            column_data=[
+                ("Уровни", dp(40)),
+                ("1 место", dp(15)),
+                ("2 место", dp(15)),
+                ("3 место", dp(15)),
+                ("Участие", dp(15)),
+            ],
+            row_data=[
+                (
+                    "Кванториум_НЧК",
+                    "3",
+                    "2",
+                    "1",
+                    "-",
+                ),
+                (
+                    "Городской",
+                    "5",
+                    "3",
+                    "2",
+                    "1",
+                ),
+                (
+                    "Республиканский",
+                    "7",
+                    "5",
+                    "3",
+                    "2"
+                ),
+                (
+                    "Межрегиональный",
+                    "10",
+                    "7",
+                    "5",
+                    "3",
+                ),
+                (
+                    "Всероссийский",
+                    "15",
+                    "10",
+                    "7",
+                    "5",
+                ),
+            ],
+        )
+        self.root.ids.charge_contests.add_widget(charge_contests)
+        list_level = ['Учитель', 'Администрация']
         menu_items = [
             {
-                "text": f"Item {i}",
+                "text": f"{i}",
                 "viewclass": "OneLineListItem",
                 "height": dp(56),
-                "on_release": lambda x=f"Item {i}": self.menu_callback(x),
-            } for i in range(5)
+                "on_release": lambda x=f"{i}": self.menu_callback(x),
+            } for i in list_level
         ]
         self.menu = MDDropdownMenu(
             header_cls=MenuHeader(),
-            caller=self.root.ids.button,
+            caller=self.root.ids.drop_menu_position,
             items=menu_items,
             width_mult=4,
         )
-
-    def menu_callback(self, text_item):
-        print(text_item)
-
-    # def on_start(self):
-    #     charge_contests = MDDataTable(
-    #         column_data=[
-    #             ("Уровни", dp(40)),
-    #             ("1 место", dp(15)),
-    #             ("2 место", dp(15)),
-    #             ("3 место", dp(15)),
-    #             ("Участие", dp(15)),
-    #         ],
-    #         row_data=[
-    #             (
-    #                 "Кванториум_НЧК",
-    #                 "3",
-    #                 "2",
-    #                 "1",
-    #                 "-",
-    #             ),
-    #             (
-    #                 "Городской",
-    #                 "5",
-    #                 "3",
-    #                 "2",
-    #                 "1",
-    #             ),
-    #             (
-    #                 "Республиканский",
-    #                 "7",
-    #                 "5",
-    #                 "3",
-    #                 "2"
-    #             ),
-    #             (
-    #                 "Межрегиональный",
-    #                 "10",
-    #                 "7",
-    #                 "5",
-    #                 "3",
-    #             ),
-    #             (
-    #                 "Всероссийский",
-    #                 "15",
-    #                 "10",
-    #                 "7",
-    #                 "5",
-    #             ),
-    #         ],
-    #     )
-    #     self.root.ids.charge_contests.add_widget(charge_contests)
 
     def build(self):
         self.theme_cls.theme_style = "Dark"
@@ -140,32 +140,33 @@ class MoneyTest(MDApp):
     def copy_button_text(self):
         Clipboard.copy(self.root.ids.id_users.text)
 
-    def registration(self):
-        login = self.root.ids.log.text
-        password = self.root.ids.pase.text
-        name = self.root.ids.nameas.text
-        age = self.root.ids.age.text
-        otch = self.root.ids.otchims.text
-        famal = self.root.ids.famalis.text
+    def registration(self, how_screen):
+        if how_screen == "Admin_screen":
+            if self.x == "Учитель":
+                login = self.root.ids.login_admin_new.text
+                password = self.root.ids.password_admin_new.text
+                name = self.root.ids.name_admin_new.text
+                birthday = self.root.ids.birthday_admin_new.text
+            elif self.x == "Администрация":
+                pass
+        else:
+            pass
 
-        fio = f"{age, otch, famal}"
         try:
-            db = sqlite3.connect("database.db")
+            db = sqlite3.connect("userbase.db")
             cursor = db.cursor()
 
-            cursor.execute("SELECT login FROM users WHERE login = ?", [login])
+            cursor.execute("SELECT id_user FROM users WHERE login = ?", [login])
 
             if cursor.fetchone() is None:
-                values = [login, password, fio, age]
-                cursor.execute("INSERT INTO users(login, password, name, age) VALUES(?,?,?,?)", values)
+                values = [login, password, birthday]
+                cursor.execute("INSERT INTO users(id_user, password, name, birthday) VALUES(?,?,?,?)", values)
                 toast("Создали акаунт")
                 self.root.ids.screen_manager.current = "Enter"
                 db.commit()
             else:
                 toast("Tакой логин уже есть")
 
-        except sqlite3.Error as e:
-            print("Error", e)
         finally:
             cursor.close()
             db.close()
@@ -179,20 +180,19 @@ class MoneyTest(MDApp):
                 self.root.ids.screen_manager.current = "admin_screen"
         else:
             try:
-                db = sqlite3.connect("database.db")
+                db = sqlite3.connect("userbase.db")
                 cursor = db.cursor()
-                cursor.execute("SELECT login FROM users WHERE login = ?", [login])
+                cursor.execute("SELECT id_user FROM users WHERE id_user = ?", [login])
                 if cursor.fetchone() is None:
                     toast("Такого логина не существует")
                 else:
-                    cursor.execute("SELECT login FROM users WHERE login = ? AND password = md5(?)", [login, password])
+                    cursor.execute("SELECT id_user FROM users WHERE id_user = ? AND password = md5(?)", [login, password])
                     if cursor.fetchone() is None:
                         toast("Пороль не верный")
                     else:
                         toast("Вы вошли")
                         self.root.ids.screen_manager.current = "search"
-            except sqlite3.Error as e:
-                print('Error, e')
+
             finally:
                 cursor.close()
                 db.close()
