@@ -17,6 +17,7 @@ from kivymd.uix.list import IRightBodyTouch, OneLineAvatarIconListItem
 from kivymd.uix.menu import MDDropdownMenu
 from kivymd.toast import toast
 from kivy.uix.boxlayout import BoxLayout
+import random
 Window.size = (520, 900)
 
 with sqlite3.connect('userbase.db') as db:
@@ -64,9 +65,6 @@ class MoneyTest(MDApp):
 
     def notification(self):
         self.root.ids.notification_bell.icon = 'bell-ring'
-
-    def menu_callback(self, xs):
-        self.x = xs
 
     def on_start(self):
         charge_contests = MDDataTable(
@@ -126,11 +124,14 @@ class MoneyTest(MDApp):
             } for i in list_level
         ]
         self.menu = MDDropdownMenu(
-            header_cls=MenuHeader(),
             caller=self.root.ids.drop_menu_position,
             items=menu_items,
             width_mult=4,
         )
+
+    def menu_callback(self, text_item):
+        self.level = f"{text_item}"
+        self.root.ids.drop_menu_position.text = f"{text_item}"
 
     def build(self):
         self.theme_cls.theme_style = "Dark"
@@ -140,14 +141,25 @@ class MoneyTest(MDApp):
     def copy_button_text(self):
         Clipboard.copy(self.root.ids.id_users.text)
 
+    def generate(self):
+        with sqlite3.connect('userbase.db') as db:
+            cursor = db.cursor()
+            while True:
+                generate = random.randint(10, 15)
+                print(generate)
+                cursor.execute("SELECT id_user FROM users WHERE id_user = ?", [generate])
+                if cursor.fetchone() is None:
+                    self.root.ids.login_admin_new.text = f"{generate}"
+                    break
+
     def registration(self, how_screen):
         if how_screen == "Admin_screen":
-            if self.x == "Учитель":
+            if self.level == "Учитель":
                 login = self.root.ids.login_admin_new.text
                 password = self.root.ids.password_admin_new.text
                 name = self.root.ids.name_admin_new.text
                 birthday = self.root.ids.birthday_admin_new.text
-            elif self.x == "Администрация":
+            elif self.level == "Администрация":
                 pass
         else:
             pass
@@ -156,13 +168,13 @@ class MoneyTest(MDApp):
             db = sqlite3.connect("userbase.db")
             cursor = db.cursor()
 
-            cursor.execute("SELECT id_user FROM users WHERE login = ?", [login])
+            cursor.execute("SELECT id_user FROM users WHERE id_user = ?", [login])
 
             if cursor.fetchone() is None:
-                values = [login, password, birthday]
+                values = [login, password, name, birthday]
                 cursor.execute("INSERT INTO users(id_user, password, name, birthday) VALUES(?,?,?,?)", values)
                 toast("Создали акаунт")
-                self.root.ids.screen_manager.current = "Enter"
+                # self.root.ids.screen_manager.current = "Enter"
                 db.commit()
             else:
                 toast("Tакой логин уже есть")
