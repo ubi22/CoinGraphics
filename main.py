@@ -17,8 +17,14 @@ from kivymd.uix.list import IRightBodyTouch, OneLineAvatarIconListItem
 from kivymd.uix.menu import MDDropdownMenu
 from kivymd.toast import toast
 from kivy.uix.boxlayout import BoxLayout
+import hashlib
 import random
 Window.size = (520, 900)
+
+
+def md5sum(value):
+    return hashlib.md5(value.encode()).hexdigest()
+
 
 with sqlite3.connect('userbase.db') as db:
     cursor = db.cursor()
@@ -114,20 +120,7 @@ class MoneyTest(MDApp):
             ],
         )
         self.root.ids.charge_contests.add_widget(charge_contests)
-        list_level = ['Учитель', 'Администрация']
-        menu_items = [
-            {
-                "text": f"{i}",
-                "viewclass": "OneLineListItem",
-                "height": dp(56),
-                "on_release": lambda x=f"{i}": self.menu_callback(x),
-            } for i in list_level
-        ]
-        self.menu = MDDropdownMenu(
-            caller=self.root.ids.drop_menu_position,
-            items=menu_items,
-            width_mult=4,
-        )
+
 
     def menu_callback(self, text_item):
         self.level = f"{text_item}"
@@ -145,7 +138,7 @@ class MoneyTest(MDApp):
         with sqlite3.connect('userbase.db') as db:
             cursor = db.cursor()
             while True:
-                generate = random.randint(10, 15)
+                generate = random.randint(10000, 100000)
                 print(generate)
                 cursor.execute("SELECT id_user FROM users WHERE id_user = ?", [generate])
                 if cursor.fetchone() is None:
@@ -154,25 +147,22 @@ class MoneyTest(MDApp):
 
     def registration(self, how_screen):
         if how_screen == "Admin_screen":
-            if self.level == "Учитель":
-                login = self.root.ids.login_admin_new.text
-                password = self.root.ids.password_admin_new.text
-                name = self.root.ids.name_admin_new.text
-                birthday = self.root.ids.birthday_admin_new.text
-            elif self.level == "Администрация":
-                pass
+            login = self.root.ids.login_admin_new.text
+            password = self.root.ids.password_admin_new.text
+            name = self.root.ids.name_admin_new.text
+            birthday = self.root.ids.birthday_admin_new.text
         else:
             pass
 
         try:
             db = sqlite3.connect("userbase.db")
             cursor = db.cursor()
-
+            db.create_function("md5", 1, md5sum)
             cursor.execute("SELECT id_user FROM users WHERE id_user = ?", [login])
 
             if cursor.fetchone() is None:
                 values = [login, password, name, birthday]
-                cursor.execute("INSERT INTO users(id_user, password, name, birthday) VALUES(?,?,?,?)", values)
+                cursor.execute("INSERT INTO users(id_user, password, name, birthday) VALUES(?,md5(?),?,?)", values)
                 toast("Создали акаунт")
                 # self.root.ids.screen_manager.current = "Enter"
                 db.commit()
@@ -194,6 +184,7 @@ class MoneyTest(MDApp):
             try:
                 db = sqlite3.connect("userbase.db")
                 cursor = db.cursor()
+                db.create_function("md5", 1, md5sum)
                 cursor.execute("SELECT id_user FROM users WHERE id_user = ?", [login])
                 if cursor.fetchone() is None:
                     toast("Такого логина не существует")
@@ -202,8 +193,15 @@ class MoneyTest(MDApp):
                     if cursor.fetchone() is None:
                         toast("Пороль не верный")
                     else:
-                        toast("Вы вошли")
-                        self.root.ids.screen_manager.current = "search"
+                        if len(login) == 5:
+                            toast("Вы вошли")
+                            self.root.ids.screen_manager.current = "main_screen"
+                        elif len(login) == 6:
+                            toast("Вы вошли")
+                            self.root.ids.screen_manager.current = "teacher_screen"
+                        elif len(login) == 7:
+                            toast("Вы вошли")
+                            self.root.ids.screen_manager.current = "admin_screen"
 
             finally:
                 cursor.close()

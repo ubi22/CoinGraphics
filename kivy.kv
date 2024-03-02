@@ -258,8 +258,9 @@ Screen:
                     orientation: "vertical"
                     MDFloatLayout:
 
-                        MDIconButton:
+                        TooltipMDIconButton:
                             icon: "arrow-left"
+                            tooltip_text: 'Назад'
                             pos_hint: {"center_x": .13, "center_y": .92}
                             icon_size: "43sp"
                             on_release:
@@ -348,12 +349,14 @@ Screen:
                                         icon: "account-plus"
                                 OneLineAvatarListItem:
                                     text: "Выйти"
+                                    on_release: app.screen('login_screen')
                                     IconLeftWidget:
                                         icon: "exit-to-app"
                         MDFillRoundFlatIconButton:
                             icon: 'exit-to-app'
                             text: 'Выйти'
                             pos_hint: {"center_x": .5, "center_y": .12}
+                            on_release: app.screen('login_screen')
             MDScreen:
                 name:  "settingsadmin"
                 MDFloatLayout:
@@ -369,10 +372,10 @@ Screen:
                         width: "400dp"
                         hint_text: "Логин"
                         pos_hint: {"center_x": .5, "center_y": .75}
-                    MDRaisedButton:
-                        text: "Сгенирировать"
+                    MDIconButton:
+                        icon: "scr/repeat.png"
                         on_release: app.generate()
-                        pos_hint: {"center_x": .8, "center_y": .75}
+                        pos_hint: {"center_x": .88, "center_y": .75}
                     MDTextField:
                         id: password_admin_new
                         mode: "rectangle"
@@ -394,17 +397,43 @@ Screen:
                         width: "400dp"
                         hint_text: "День рождение"
                         pos_hint: {"center_x": .5, "center_y": .45}
-                    MDDropDownItem:
-                        id: drop_menu_position
-                        pos_hint: {'center_x': .5, 'center_y': .5}
-                        text: 'Должность'
-                        on_release: app.menu.open()
                     MDRaisedButton:
                         text: "Создать"
                         text_size: "39sp"
                         pos_hint: {"center_x": .5, "center_y": .3}
                         on_release:
                             app.registration("Admin_screen")
+            MDScreen:
+                name: 'teacher_screen'
+                MDList:
+                    MDBoxLayout:
+                        orientation: 'vertical'
+                        spacing: dp(10)
+                        padding: dp(20)
+
+                        MDBoxLayout:
+                            adaptive_height: True
+
+                            MDIconButton:
+                                icon: 'magnify'
+
+                            MDTextField:
+                                id: search_field
+                                hint_text: 'Search icon'
+                                on_text: root.set_list_md_icons(self.text, True)
+
+                        RecycleView:
+                            id: rv
+                            key_viewclass: 'viewclass'
+                            key_size: 'height'
+
+                            RecycleBoxLayout:
+                                padding: dp(10)
+                                default_size: None, dp(48)
+                                default_size_hint: 1, None
+                                size_hint_y: None
+                                height: self.minimum_height
+                                orientation: 'vertical'
 
         MDNavigationDrawer:
             id: nav_drawer
