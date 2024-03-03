@@ -115,6 +115,7 @@ Screen:
                             on_release:
                                 app.screen("user_profile")
                         MDFlatButton:
+                            id: name_main_screen
                             text: "Андрей ›"
                             font_style: "Subtitle2"
                             font_size: '30sp'
@@ -274,6 +275,7 @@ Screen:
                             on_release: app.file_manager_open(1)
 
                         MDLabel:
+                            id: name_profile_main
                             text: "Васильев\nАндрей Витальевич"
                             font_style: "Button"
                             size_hint_y: None
@@ -281,6 +283,7 @@ Screen:
                             font_size: "30sp"
                             pos_hint: {"center_x": .5, "center_y": .74}
                         MDLabel:
+                            id: birthday_profile_main
                             text: "02.10.2009"
                             font_style: "Subtitle1"
                             size_hint_y: None

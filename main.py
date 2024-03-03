@@ -195,6 +195,14 @@ class MoneyTest(MDApp):
                     else:
                         if len(login) == 5:
                             toast("Вы вошли")
+                            cursor.execute(f'''SELECT * FROM users WHERE id_user LIKE '%{login}%';''')
+                            three_results = cursor.fetchall()
+                            name = three_results[0][3]
+                            name = name.split()
+                            birthday = three_results[0][4]
+                            self.root.ids.name_main_screen.text = f"{name[1]} >"
+                            self.root.ids.name_profile_main.text = f"{name[0]}\n {name[1]} {name[2]}"
+                            self.root.ids.birthday_profile_main.text = f"{birthday}"
                             self.root.ids.screen_manager.current = "main_screen"
                         elif len(login) == 6:
                             toast("Вы вошли")
