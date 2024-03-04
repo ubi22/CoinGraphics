@@ -138,7 +138,7 @@ class MoneyTest(MDApp):
         with sqlite3.connect('userbase.db') as db:
             cursor = db.cursor()
             while True:
-                generate = random.randint(10000, 100000)
+                generate = random.randint(100000, 1000000)
                 print(generate)
                 cursor.execute("SELECT id_user FROM users WHERE id_user = ?", [generate])
                 if cursor.fetchone() is None:
@@ -164,6 +164,7 @@ class MoneyTest(MDApp):
                 values = [login, password, name, birthday]
                 cursor.execute("INSERT INTO users(id_user, password, name, birthday) VALUES(?,md5(?),?,?)", values)
                 toast("Создали акаунт")
+                self.screen("login_screen")
                 # self.root.ids.screen_manager.current = "Enter"
                 db.commit()
             else:
