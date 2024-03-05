@@ -121,6 +121,8 @@ class MoneyTest(MDApp):
         )
         self.root.ids.charge_contests.add_widget(charge_contests)
 
+    def search_students(self, text="", search=False):
+        pass
 
     def menu_callback(self, text_item):
         self.level = f"{text_item}"
