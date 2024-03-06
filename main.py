@@ -122,8 +122,12 @@ class MoneyTest(MDApp):
         self.root.ids.charge_contests.add_widget(charge_contests)
 
     def search_students(self, text="", search=False):
-        pass
-
+        if len(text) >= 4:
+            with sqlite3.connect('userbase.db') as db:
+                cursor = db.cursor()
+                cursor.execute(f'''SELECT * FROM users WHERE id_user OR name LIKE '%{text}%';''')
+                three_results = cursor.fetchall()
+                print(three_results)
     def menu_callback(self, text_item):
         self.level = f"{text_item}"
         self.root.ids.drop_menu_position.text = f"{text_item}"

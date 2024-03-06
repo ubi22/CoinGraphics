@@ -104,24 +104,27 @@ Screen:
                         size_hint: 1, .12
                         TooltipIcon:
                             icon: 'bell'
+                            tooltip_text: "Уведомления"
                             icon_size: '25sp'
                             pos_hint: {'center_x': .9, 'center_y': .3}
                             on_release:
                                 nav_drawer.set_state("open")
-                        TooltipIcon:
-                            icon: "alpha-a"
-                            pos_hint: {'center_x': .1, 'center_y': .3}
-                            icon_size: '50sp'
-                            on_release:
-                                app.screen("user_profile")
-                        MDFlatButton:
-                            id: name_main_screen
-                            text: "Андрей ›"
-                            font_style: "Subtitle2"
-                            font_size: '30sp'
-                            pos_hint: {'center_x': .296, 'center_y': .3}
-                            on_release:
-                                app.screen("user_profile")
+
+                            TooltipIcon:
+                                icon: "alpha-a"
+                                tooltip_text: "Профиль"
+                                pos_hint: {'center_x': .1, 'center_y': .3}
+                                icon_size: '50sp'
+                                on_release:
+                                    app.screen("user_profile")
+                            MDFlatButton:
+                                id: name_main_screen
+                                text: "Андрей ›"
+                                font_style: "Subtitle2"
+                                font_size: '30sp'
+                                pos_hint: {'center_x': .296, 'center_y': .3}
+                                on_release:
+                                    app.screen("user_profile")
                     MDFloatLayout:
                         size_hint: 1, .2
                         MDCard:
@@ -410,28 +413,57 @@ Screen:
                 name: 'teacher_screen'
                 MDBoxLayout:
                     orientation: 'vertical'
-                    spacing: dp(10)
-                    padding: dp(20)
                     MDFloatLayout:
-                        adaptive_height: True
-                        id: man
-                        MDTextField:
-                            id: search_field
-                            mode: "round"
-                            size_hint: .8, .40
-                            pos_hint: {"center_x": .5, "center_y": .5}
-                            hint_text: 'Поиск по ФИО, Дата рождения'
-                            on_text: app.search_students(self.text, True)
+                        size_hint: 1, .14
                         MDIconButton:
-                            icon: 'magnify'
-                            pos_hint: {"center_x": .85, "center_y": .5}
-                            on_release: app.search_news()
-                    ScrollView:
-                        scroll_timeout : 150
-                        MDList:
-                            id: rv
-                            padding: "12dp"
-                            spacing: "12dp"
+                            icon: 'account-circle-outline'
+                            icon_size: '60sp'
+                            pos_hint: {"center_x": .15, "center_y": .5}
+                        MDLabel:
+                            id: name_teacher_screen
+                            pos_hint: {"center_x": .8, "center_y": .75}
+                            text: "Васильев Андрей Витальевич"
+                            font_size: '25sp'
+                        MDLabel:
+                            id: birthday_teacher_screen
+                            text: '02.10.2009'
+                            pos_hint: {"center_x": .8, "center_y": .5}
+                            font_size: '25sp'
+                        MDLabel:
+                            id: id_teacher_screen
+                            text: 'ID: 924314'
+                            pos_hint: {"center_x": .8, "center_y": .25}
+                            font_size: '25sp'
+
+                    MDBoxLayout:
+                        orientation: "vertical"
+                        size_hint_y: None
+                        height: "4dp"
+                        md_bg_color: 1, 1, 1, 0.2
+                    MDBoxLayout:
+                        orientation: 'vertical'
+                        size_hint: 1, .8
+                        spacing: dp(10)
+                        padding: dp(20)
+                        MDFloatLayout:
+                            adaptive_height: True
+                            MDTextField:
+                                id: search_students
+                                mode: "round"
+                                size_hint: .8, .40
+                                pos_hint: {"center_x": .5, "center_y": .5}
+                                hint_text: 'Поиск по ФИО, Дата рождения, ID'
+                                on_text: app.search_students(self.text, True)
+                            MDIconButton:
+                                icon: 'magnify'
+                                pos_hint: {"center_x": .85, "center_y": .5}
+                                on_release: app.search_news()
+                        ScrollView:
+                            scroll_timeout : 150
+                            MDList:
+                                id: list_students
+                                padding: "12dp"
+                                spacing: "12dp"
         MDNavigationDrawer:
             id: nav_drawer
             anchor: "right"
