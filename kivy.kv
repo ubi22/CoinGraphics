@@ -109,7 +109,10 @@ Screen:
                             pos_hint: {'center_x': .9, 'center_y': .3}
                             on_release:
                                 nav_drawer.set_state("open")
-
+                        MDBoxLayout:
+                            orientation: 'horizontal'
+                            pos_hint: {'center_x': .53, 'center_y': .3}
+                            size_hint: 1, .12
                             TooltipIcon:
                                 icon: "alpha-a"
                                 tooltip_text: "Профиль"
@@ -283,7 +286,7 @@ Screen:
                             font_style: "Button"
                             size_hint_y: None
                             halign: "center"
-                            font_size: "30sp"
+                            font_size: "25sp"
                             pos_hint: {"center_x": .5, "center_y": .74}
                         MDLabel:
                             id: birthday_profile_main
@@ -303,17 +306,15 @@ Screen:
                                     IconLeftWidget:
                                         icon: "cog"
                                 OneLineAvatarListItem:
+                                    on_release: app.screen("login_screen")
                                     text: "Выйти"
                                     IconLeftWidget:
                                         icon: "exit-to-app"
                         MDFillRoundFlatIconButton:
                             icon: 'exit-to-app'
                             text: 'Выйти'
+                            on_release: app.screen("login_screen")
                             pos_hint: {"center_x": .5, "center_y": .12}
-            MDScreen:
-                name: "spending"
-                MDLabel:
-                    text: "Что хотите купить?"
             MDScreen:
                 name: "admin_screen"
                 MDCard:
@@ -431,7 +432,7 @@ Screen:
                             font_size: '25sp'
                         MDLabel:
                             id: id_teacher_screen
-                            text: 'ID: 924314'
+                            text: 'ID: 265265'
                             pos_hint: {"center_x": .8, "center_y": .25}
                             font_size: '25sp'
 
@@ -458,12 +459,11 @@ Screen:
                                 icon: 'magnify'
                                 pos_hint: {"center_x": .85, "center_y": .5}
                                 on_release: app.search_news()
-                        ScrollView:
-                            scroll_timeout : 150
+                        MDScrollView:
                             MDList:
-                                id: list_students
-                                padding: "12dp"
-                                spacing: "12dp"
+                                id: container
+
+
         MDNavigationDrawer:
             id: nav_drawer
             anchor: "right"

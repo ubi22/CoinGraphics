@@ -84,6 +84,7 @@ class MainApp(MDApp):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.screen = PreviousMDIcons()
+
     def build(self):
         return self.screen
 

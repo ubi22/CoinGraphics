@@ -4,15 +4,24 @@ from kivy.core.clipboard import Clipboard
 from kivy.core.window import Window
 from kivy.lang import Builder
 from kivy.properties import ObjectProperty
+from kivymd.uix.list import ThreeLineIconListItem
 from kivy.metrics import dp
 from kivymd.app import MDApp
 from kivymd.uix.datatables import MDDataTable
 from kivy.uix.anchorlayout import AnchorLayout
 import sqlite3
 from kivy.metrics import dp
+from kivymd.uix.list import IconRightWidget
+from kivymd.uix.label import MDLabel
+from kivymd.uix.button import MDIconButton
+from kivymd.uix.card import MDCard
 from kivy.properties import StringProperty
+from kivymd.uix.button import MDFlatButton
+from kivymd.uix.dialog import MDDialog
+from kivymd.icon_definitions import md_icons
 from kivymd.app import MDApp
 from kivymd.uix.boxlayout import MDBoxLayout
+from kivymd.uix.list import ThreeLineIconListItem
 from kivymd.uix.list import IRightBodyTouch, OneLineAvatarIconListItem
 from kivymd.uix.menu import MDDropdownMenu
 from kivymd.toast import toast
@@ -68,7 +77,7 @@ class MenuHeader(MDBoxLayout):
 
 class MoneyTest(MDApp):
     level = ""
-
+    dialog = None
     def notification(self):
         self.root.ids.notification_bell.icon = 'bell-ring'
 
@@ -125,9 +134,38 @@ class MoneyTest(MDApp):
         if len(text) >= 4:
             with sqlite3.connect('userbase.db') as db:
                 cursor = db.cursor()
-                cursor.execute(f'''SELECT * FROM users WHERE id_user OR name LIKE '%{text}%';''')
+                cursor.execute(f'''SELECT * FROM users WHERE name LIKE '%{text}%';''')
                 three_results = cursor.fetchall()
                 print(three_results)
+                self.root.ids.container.clear_widgets()
+                for i in range(len(three_results)):
+                    self.root.ids.container.add_widget(
+                        ThreeLineIconListItem(
+                            text=f'{three_results[i][3]}',
+                            secondary_text=f"{three_results[i][4]}",
+                            tertiary_text=f"ID: {three_results[i][1]}",
+                            on_press=lambda x=three_results[i][1]: self.dialog_windows(x)
+                        ),
+                    )
+
+    def dialog_windows(self, task_windows):
+        if not self.dialog:
+            self.dialog = MDDialog(
+                title=f"ID: {task_windows}",
+                type="simple",
+                items=[
+                    Item(text="Изменить пароль", on_release=lambda x=task_windows: self.dialog_windows_task(task=x)),
+                    Item(text="Удалить", on_release=lambda x=task_windows: self.dialog_windows_task(task=x)),
+                    Item(text="Начислить", on_release=lambda x=task_windows: self.dialog_windows_task(task=x)),
+                    Item(text="Списание", on_release=lambda x=task_windows: self.dialog_windows_task(task=x)),
+                ],
+
+            )
+        self.dialog.open()
+
+    def dialog_windows_task(self, task):
+        print(task)
+
     def menu_callback(self, text_item):
         self.level = f"{text_item}"
         self.root.ids.drop_menu_position.text = f"{text_item}"
