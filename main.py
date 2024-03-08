@@ -4,6 +4,7 @@ from kivy.core.clipboard import Clipboard
 from kivy.core.window import Window
 from kivy.lang import Builder
 from kivy.properties import ObjectProperty
+from kivymd.uix.textfield import MDTextField
 from kivymd.uix.list import ThreeLineIconListItem
 from kivy.metrics import dp
 from kivymd.app import MDApp
@@ -51,9 +52,8 @@ with sqlite3.connect('userbase.db') as db:
     cursor.executescript(query)
 
 
-class RightContentCls(IRightBodyTouch, MDBoxLayout):
-    icon = StringProperty()
-    text = StringProperty()
+class Content(BoxLayout):
+    pass
 
 
 class Item(OneLineAvatarIconListItem):
@@ -77,7 +77,14 @@ class MenuHeader(MDBoxLayout):
 
 class MoneyTest(MDApp):
     level = ""
-    dialog = None
+    dialog_list = None
+    dialog_change = None
+    dialog_confirmation = None
+    name = str
+    id = int
+    birthday = str
+    user_modified = str
+
     def notification(self):
         self.root.ids.notification_bell.icon = 'bell-ring'
 
@@ -144,27 +151,124 @@ class MoneyTest(MDApp):
                             text=f'{three_results[i][3]}',
                             secondary_text=f"{three_results[i][4]}",
                             tertiary_text=f"ID: {three_results[i][1]}",
-                            on_press=lambda x=three_results[i][1]: self.dialog_windows(x)
+                            on_press=lambda x: self.dialog_windows(x)
                         ),
                     )
 
     def dialog_windows(self, task_windows):
-        if not self.dialog:
-            self.dialog = MDDialog(
-                title=f"ID: {task_windows}",
+        self.name = task_windows.text
+        self.birthday = task_windows.secondary_text
+        self.id = task_windows.tertiary_text
+        if not self.dialog_list:
+            self.dialog_list = MDDialog(
+                title=f"{task_windows.text}",
                 type="simple",
+                radius=[20, 7, 20, 7],
                 items=[
-                    Item(text="Изменить пароль", on_release=lambda x=task_windows: self.dialog_windows_task(task=x)),
-                    Item(text="Удалить", on_release=lambda x=task_windows: self.dialog_windows_task(task=x)),
-                    Item(text="Начислить", on_release=lambda x=task_windows: self.dialog_windows_task(task=x)),
-                    Item(text="Списание", on_release=lambda x=task_windows: self.dialog_windows_task(task=x)),
+                    Item(text="Изменить пароль", on_release=lambda x=task_windows.text: self.dialog_windows_task(x)),
+                    Item(text="Удалить", on_release=lambda x=task_windows.text: self.dialog_windows_task(x)),
+                    Item(text="Начислить", on_release=lambda x=task_windows.text: self.dialog_windows_task(x)),
+                    Item(text="Списание", on_release=lambda x=task_windows.text: self.dialog_windows_task(x)),
                 ],
 
             )
-        self.dialog.open()
+        self.dialog_list.open()
+
+    def dialog_close(self, a):
+        print(a)
+        eval(f"self.{a}.dismiss()")
+
+    def dialog_windows_change(self, task_name):
+        self.dialog_close("dialog_list")
+        if not self.dialog_change:
+            self.dialog_change = MDDialog(
+                radius=[20, 7, 20, 7],
+                title=f"{task_name}",
+                type="custom",
+                content_cls=MDBoxLayout(
+                    MDTextField(
+                        id="first_field",
+                        hint_text=f"Пороль",
+                    ),
+                    MDTextField(
+                        id="secondary_field",
+                        hint_text=f"Потвердите пороль",
+                    ),
+                    orientation="vertical",
+                    spacing="12dp",
+                    size_hint_y=None,
+                    height="120dp",
+                ),
+                buttons=[
+                    MDFlatButton(
+                        text="Отмена",
+                        theme_text_color="Custom",
+                        text_color=self.theme_cls.primary_color,
+                        on_release=lambda x: self.dialog_close("dialog_change")
+                    ),
+                    MDFlatButton(
+                        text="Отредактировать",
+                        theme_text_color="Custom",
+                        text_color=self.theme_cls.primary_color,
+                    ),
+                ],
+
+            )
+        self.dialog_change.open()
+
+    def dialog_windows_confirmation(self):
+        if not self.dialog_confirmation:
+            self.dialog_confirmation = MDDialog(
+                title=f"Вы точно хотите удалить: \n{self.name}",
+                text="Все данные о пользователе будут стерты без возратно",
+                buttons=[
+                    MDFlatButton(
+                        text="Отмена",
+                        theme_text_color="Custom",
+                        text_color=self.theme_cls.primary_color,
+                        on_release=lambda x: self.dialog_close("dialog_confirmation")
+                    ),
+                    MDFlatButton(
+                        text="Удалить",
+                        theme_text_color="Custom",
+                        text_color=self.theme_cls.primary_color,
+                        on_release=lambda x: self.dialog_change_end(x)
+                    ),
+                ],
+            )
+        self.dialog_confirmation.open()
+
+    def dialog_change_end(self, task):
+        with sqlite3.connect('userbase.db') as db:
+            cursor = db.cursor()
+            task = task.text
+            if task == "Изменить пароль":
+                cursor.execute("")
+            elif task == "Удалить":
+                pass
+            elif task == "Начислить":
+                pass
+            elif task == "Списание":
+                pass
 
     def dialog_windows_task(self, task):
-        print(task)
+        task = task.text
+        if task == "Изменить пароль":
+            self.dialog_windows_change(task)
+            self.dialog_change.content_cls.ids.first_field.hint_text = "Пароль"
+            self.dialog_change.content_cls.ids.secondary_field.hint_text = "Повторите пароль"
+        elif task == "Удалить":
+            self.dialog_windows_confirmation()
+        elif task == "Начислить":
+            self.dialog_windows_change(task)
+            self.dialog_change.title = "Начислить"
+            self.dialog_change.content_cls.ids.first_field.hint_text = "Сколько"
+            self.dialog_change.content_cls.ids.secondary_field.hint_text = "За что"
+        elif task == "Списание":
+            self.dialog_windows_change(task)
+            self.dialog_change.title = "Списать"
+            self.dialog_change.content_cls.ids.first_field.hint_text = "Сколько"
+            self.dialog_change.content_cls.ids.secondary_field.hint_text = "За что"
 
     def menu_callback(self, text_item):
         self.level = f"{text_item}"

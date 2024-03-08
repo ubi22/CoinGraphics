@@ -1,4 +1,13 @@
 <TooltipIcon@MDFloatingActionButton+MDTooltip>
+<Content>
+    orientation: "vertical"
+    spacing: "12dp"
+    size_hint_y: None
+    height: "120dp"
+    MDTextField:
+        id: charge_contests
+        hint_text: ""
+        size_hint: 1, .07
 <ContentNavigationDrawer>:
     orientation: "vertical"
     padding: "8dp"
@@ -462,8 +471,6 @@ Screen:
                         MDScrollView:
                             MDList:
                                 id: container
-
-
         MDNavigationDrawer:
             id: nav_drawer
             anchor: "right"
