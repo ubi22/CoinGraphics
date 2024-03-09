@@ -3,6 +3,7 @@ from kivymd.uix.floatlayout import MDFloatLayout
 from kivy.core.clipboard import Clipboard
 from kivy.core.window import Window
 from kivy.lang import Builder
+from kivymd.uix.filemanager import MDFileManager
 from kivy.properties import ObjectProperty
 from kivymd.uix.textfield import MDTextField
 from kivymd.uix.list import ThreeLineIconListItem
@@ -29,6 +30,7 @@ from kivymd.toast import toast
 from kivy.uix.boxlayout import BoxLayout
 import hashlib
 import random
+import os
 Window.size = (520, 900)
 
 
@@ -84,6 +86,35 @@ class MoneyTest(MDApp):
     id = int
     birthday = str
     user_modified = str
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        Window.bind(on_keyboard=self.events)
+        self.manager_open = False
+        self.file_manager = MDFileManager(
+            exit_manager=self.exit_manager,
+            select_path=self.select_path,
+            preview=True
+        )
+        self.file_manager.ext = [".xlsx"]
+
+    def manager_file_exel_open(self):
+        self.manager_open = True
+        self.file_manager.show(os.path.expanduser("/"))
+
+    def select_path(self, path):
+        self.exit_manager()
+        toast(f"{path}")
+
+    def exit_manager(self, *args):
+        self.manager_open = False
+        self.file_manager.close()
+
+    def events(self, instance, keyboard, keycode, text, modifiers):
+        if keyboard in (1001, 27):
+            if self.manager_open:
+                self.file_manager.back()
+        return True
 
     def notification(self):
         self.root.ids.notification_bell.icon = 'bell-ring'
@@ -165,7 +196,7 @@ class MoneyTest(MDApp):
                 type="simple",
                 radius=[20, 7, 20, 7],
                 items=[
-                    Item(text="Изменить пароль", on_release=lambda x=task_windows.text: self.dialog_windows_task(x)),
+                    Item(text="Сбросить пароль", on_release=lambda x=task_windows.text: self.dialog_windows_task(x)),
                     Item(text="Удалить", on_release=lambda x=task_windows.text: self.dialog_windows_task(x)),
                     Item(text="Начислить", on_release=lambda x=task_windows.text: self.dialog_windows_task(x)),
                     Item(text="Списание", on_release=lambda x=task_windows.text: self.dialog_windows_task(x)),
@@ -229,7 +260,7 @@ class MoneyTest(MDApp):
                         on_release=lambda x: self.dialog_close("dialog_confirmation")
                     ),
                     MDFlatButton(
-                        text="Удалить",
+                        text="Да",
                         theme_text_color="Custom",
                         text_color=self.theme_cls.primary_color,
                         on_release=lambda x: self.dialog_change_end(x)
@@ -253,12 +284,14 @@ class MoneyTest(MDApp):
 
     def dialog_windows_task(self, task):
         task = task.text
-        if task == "Изменить пароль":
-            self.dialog_windows_change(task)
-            self.dialog_change.content_cls.ids.first_field.hint_text = "Пароль"
-            self.dialog_change.content_cls.ids.secondary_field.hint_text = "Повторите пароль"
+        if task == "Сбросить пароль":
+            self.dialog_windows_confirmation()
+            self.dialog_confirmation.text = "Пароль будет по умолчанию: 12345678"
+            self.dialog_confirmation.title = f"Вы точно хотите сбросить пароль: \n{self.name}?"
         elif task == "Удалить":
             self.dialog_windows_confirmation()
+            self.dialog_confirmation.text = f"Все данные о пользователе будут стерты без возратно"
+            self.dialog_confirmation.title = f"Вы точно хотите удалить: \n{self.name}?"
         elif task == "Начислить":
             self.dialog_windows_change(task)
             self.dialog_change.title = "Начислить"

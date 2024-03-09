@@ -444,7 +444,6 @@ Screen:
                             text: 'ID: 265265'
                             pos_hint: {"center_x": .8, "center_y": .25}
                             font_size: '25sp'
-
                     MDBoxLayout:
                         orientation: "vertical"
                         size_hint_y: None
@@ -457,6 +456,13 @@ Screen:
                         padding: dp(20)
                         MDFloatLayout:
                             adaptive_height: True
+                            MDIconButton:
+                                icon_size: '25sp'
+                                md_bg_color: "#222126"
+                                icon_color: "#ffffff"
+                                icon: "account-plus"
+                                pos_hint: {"center_x": .97, "center_y": .5}
+                                on_release: app.screen("new_users")
                             MDTextField:
                                 id: search_students
                                 mode: "round"
@@ -471,6 +477,13 @@ Screen:
                         MDScrollView:
                             MDList:
                                 id: container
+            MDScreen:
+                name: "new_users"
+                MDRaisedButton:
+                    text: 'Загрузите .xls файл'
+                    pos_hint: {"center_x": .5, "center_y": .6}
+                    on_release: app.manager_file_exel_open()
+
         MDNavigationDrawer:
             id: nav_drawer
             anchor: "right"
