@@ -2,6 +2,7 @@ from kivymd.uix.tab import MDTabsBase
 from kivymd.uix.floatlayout import MDFloatLayout
 from kivy.core.clipboard import Clipboard
 from kivy.core.window import Window
+import pandas as pd
 from kivy.lang import Builder
 from kivymd.uix.filemanager import MDFileManager
 from kivy.properties import ObjectProperty
@@ -86,7 +87,8 @@ class MoneyTest(MDApp):
     id = int
     birthday = str
     user_modified = str
-
+    icon = "scr/logo (2).png"
+    title = "Kvantomat"
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         Window.bind(on_keyboard=self.events)
@@ -306,6 +308,15 @@ class MoneyTest(MDApp):
     def menu_callback(self, text_item):
         self.level = f"{text_item}"
         self.root.ids.drop_menu_position.text = f"{text_item}"
+
+    def excel_enter(self):
+        df = pd.read_excel('scr/Книга1.xlsx')
+        df['Дата рождения'] = pd.to_datetime(df['Дата рождения']).dt.strftime('%d %m %Y')
+        birthday = df['Дата рождения']
+        name = df['ФИО']
+        for i in range(len(birthday)):
+            birthday_enter = birthday[i].replace(" ", ".")
+            print(f"Дата рождения: {birthday_enter}, ФИО: {name[i]}")
 
     def build(self):
         self.theme_cls.theme_style = "Dark"

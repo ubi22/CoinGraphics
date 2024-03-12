@@ -1,4 +1,5 @@
 import pandas as pd
+import openpyxl
 
 # Загрузка таблицы Excel
 df = pd.read_excel('scr/Книга1.xlsx')
@@ -7,9 +8,10 @@ df = pd.read_excel('scr/Книга1.xlsx')
 df['Дата рождения'] = pd.to_datetime(df['Дата рождения']).dt.strftime('%d %m %Y')
 
 # Извлечение даты рождения и ФИО
-дата_рождения = df['Дата рождения']
-ФИО = df['ФИО']
+birthday = df['Дата рождения']
+name = df['ФИО']
 
 # Вывод результатов
-for i in range(len(дата_рождения)):
-    print(f"Дата рождения: {дата_рождения[i]}, ФИО: {ФИО[i]}")
+for i in range(len(birthday)):
+    birthday_enter = birthday[i].replace(" ", ".")
+    print(f"Дата рождения: {birthday_enter}, ФИО: {name[i]}")
