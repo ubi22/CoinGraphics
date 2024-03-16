@@ -3,6 +3,11 @@ from kivymd.uix.floatlayout import MDFloatLayout
 from kivy.core.clipboard import Clipboard
 from kivy.core.window import Window
 import pandas as pd
+import openpyxl
+import random
+import sqlite3
+from kivymd.uix.button import MDRaisedButton
+import pandas as pd
 from kivy.lang import Builder
 from kivymd.uix.filemanager import MDFileManager
 from kivy.properties import ObjectProperty
@@ -89,6 +94,8 @@ class MoneyTest(MDApp):
     user_modified = str
     icon = "scr/logo (2).png"
     title = "Kvantomat"
+    charge_contests = None
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         Window.bind(on_keyboard=self.events)
@@ -106,7 +113,84 @@ class MoneyTest(MDApp):
 
     def select_path(self, path):
         self.exit_manager()
-        toast(f"{path}")
+        self.root.ids.generate_table.clear_widgets()
+        try:
+            df = pd.read_excel(f'{path}')
+            df['Дата рождения'] = pd.to_datetime(df['Дата рождения']).dt.strftime('%d %m %Y')
+            birthday = df['Дата рождения']
+            name = df['ФИО']
+            with sqlite3.connect('userbase.db') as db:
+                cursor = db.cursor()
+
+                def generate():
+                    while True:
+                        generate = random.randint(10000, 100000)
+                        cursor.execute("SELECT id_user FROM users WHERE id_user = ?", [generate])
+                        if cursor.fetchone() is None:
+                            break
+                    return generate
+
+                data = []
+                for i in range(len(birthday)):
+                    birthday_enter = birthday[i].replace(" ", ".")
+                    # print(f"Дата рождения: {birthday_enter}, ФИО: {name[i]}")
+                    cursor.execute(f'''SELECT * FROM users WHERE name LIKE '%{name[i]}%';''')
+                    three_results = cursor.fetchall()
+                    if len(three_results) > 0:
+                        generates = three_results[0][1]
+                        data.append([f"{generates}", f"{name[i]}", f'{birthday_enter}', "не известин"])
+                    else:
+                        generates = generate()
+                        data.append([f"{generates}", f"{name[i]}", f'{birthday_enter}', '12345678'])
+                print(len(data))
+            self.charge_contests = MDDataTable(
+                size_hint=(0.9, 1),
+                rows_num=len(data),
+                column_data=[
+                    ("ID", dp(10)),
+                    ("ФИО", dp(52)),
+                    ("Дата рождения", dp(19)),
+                    ("Пароль", dp(19.2)),
+                ],
+                row_data=[
+                    [
+                        f"{data[i][0]}",
+                        f"{data[i][1]}",
+                        f"{data[i][2]}",
+                        f"{data[i][3]}",
+                    ] for i in range(len(data))
+                ],
+            )
+            self.root.ids.generate_table.add_widget(self.charge_contests)
+            toast(f"{path}")
+            self.root.ids.boxlayout_download.pos_hint = ({"center_x": .3, "center_y": .1})
+            self.root.ids.boxlayout.add_widget(
+                MDRaisedButton(
+                    text='Создать пользователей',
+                    pos_hint=({"center_x": .7, "center_y": .1}),
+                    on_release=lambda x: self.create_users_sql()
+
+                )
+            )
+
+        except(KeyError):
+            toast("Неправильные столбцы")
+
+    def create_users_sql(self):
+        with sqlite3.connect('userbase.db') as db:
+            cursor = db.cursor()
+            db.create_function("md5", 1, md5sum)
+            for i in range(len(self.charge_contests.row_data)):
+                cursor.execute("SELECT id_user FROM users WHERE id_user = ?", [self.charge_contests.row_data[i][0]])
+                three_result = cursor.fetchall()
+                print(three_result)
+                if len(three_result) == 1:
+                    pass
+                else:
+                    values = [self.charge_contests.row_data[i][0], self.charge_contests.row_data[i][3], self.charge_contests.row_data[i][1], self.charge_contests.row_data[i][2]]
+                    cursor.execute("INSERT INTO users(id_user, password, name, birthday) VALUES(?,md5(?),?,?)", values)
+                    toast(f"Создана запись c ID {self.charge_contests.row_data[i][0]}")
+
 
     def exit_manager(self, *args):
         self.manager_open = False
@@ -122,6 +206,7 @@ class MoneyTest(MDApp):
         self.root.ids.notification_bell.icon = 'bell-ring'
 
     def on_start(self):
+        self.root.ids.text_hint_create.text = """Для создания пользователе\n1: Выберети файл формата Excel\n2: Проверьте данные сгенерировав таблицу\n4: Создайте пользователей\n3: Отправте на почту копию таблицы        """
         charge_contests = MDDataTable(
             column_data=[
                 ("Уровни", dp(40)),
@@ -170,11 +255,25 @@ class MoneyTest(MDApp):
         )
         self.root.ids.charge_contests.add_widget(charge_contests)
 
+    def send_mail(self):
+        df = pd.read_excel('scr/Книга1.xlsx')
+        enter_birthday = []
+        print(enter_birthday)
+        df['Дата рождения'] = pd.to_datetime(df['Дата рождения']).dt.strftime('%d %m %Y')
+        birthday_n = []
+        name_n = []
+        generate_list = []
+        birthday = df['Дата рождения']
+        name = df['ФИО']
+
+    def generate_table(self):
+        pass
+
     def search_students(self, text="", search=False):
         if len(text) >= 4:
             with sqlite3.connect('userbase.db') as db:
                 cursor = db.cursor()
-                cursor.execute(f'''SELECT * FROM users WHERE name LIKE '%{text}%';''')
+                cursor.execute(f'''SELECT * FROM users WHERE name LIKE '%{text.title()}%';''')
                 three_results = cursor.fetchall()
                 print(three_results)
                 self.root.ids.container.clear_widgets()
