@@ -169,7 +169,6 @@ Screen:
                             icon: 'shopping'
                             tooltip_text: 'Потратить балы'
                             pos_hint: {'center_x': .5, 'center_y': .7}
-                            on_release: app.screen("spending")
                     MDTabs:
                         id: tabs
                         Tab:
@@ -217,16 +216,67 @@ Screen:
                                         pos_hint: {"center_x": .5, "center_y": .9}
                                         elevation: 6
                                         orientation: "vertical"
+                                        MDFloatLayout:
+                                            MDIconButton:
+                                                icon: "scr/cap.png"
+                                                icon_size: "90sp"
+                                                pos_hint: {"center_x": .5, "center_y": .7}
+                                            MDFlatButton:
+                                                text: 'Бейсболка'
+                                                font_size: "14sp"
+                                                pos_hint: {"center_x": .5, "center_y": .4}
+                                            MDFlatButton:
+                                                text: "60$"
+                                                font_size: "23sp"
+                                                pos_hint: {"center_x": .26, "center_y": .2}
+                                            MDRaisedButton:
+                                                text: "Купить"
+                                                pos_hint: {"center_x": .7, "center_y": .2}
+                                                size_hint: .08, .09
                                     MDCard:
                                         size_hint: 1, 1
                                         pos_hint: {"center_x": .5, "center_y": .9}
                                         elevation: 6
                                         orientation: "vertical"
+                                        MDFloatLayout:
+                                            MDIconButton:
+                                                icon: "scr/mug.png"
+                                                icon_size: "90sp"
+                                                pos_hint: {"center_x": .5, "center_y": .7}
+                                            MDFlatButton:
+                                                text: 'Кружка'
+                                                font_size: "14sp"
+                                                pos_hint: {"center_x": .5, "center_y": .4}
+                                            MDFlatButton:
+                                                text: "50$"
+                                                font_size: "23sp"
+                                                pos_hint: {"center_x": .26, "center_y": .2}
+                                            MDRaisedButton:
+                                                text: "Купить"
+                                                pos_hint: {"center_x": .7, "center_y": .2}
+                                                size_hint: .08, .09
                                     MDCard:
                                         size_hint: 1, 1
                                         pos_hint: {"center_x": .1, "center_y": .5}
                                         elevation: 6
                                         orientation: "vertical"
+                                        MDFloatLayout:
+                                            MDIconButton:
+                                                icon: "scr/shopper.png"
+                                                icon_size: "90sp"
+                                                pos_hint: {"center_x": .5, "center_y": .7}
+                                            MDFlatButton:
+                                                text: 'Шопер'
+                                                font_size: "14sp"
+                                                pos_hint: {"center_x": .5, "center_y": .4}
+                                            MDFlatButton:
+                                                text: "60$"
+                                                font_size: "23sp"
+                                                pos_hint: {"center_x": .26, "center_y": .2}
+                                            MDRaisedButton:
+                                                text: "Купить"
+                                                pos_hint: {"center_x": .7, "center_y": .2}
+                                                size_hint: .08, .09
                                     MDCard:
                                         size_hint: 1, 1
                                         pos_hint: {"center_x": .5, "center_y": .9}
@@ -386,7 +436,7 @@ Screen:
                             text: 'Выйти'
                             pos_hint: {"center_x": .5, "center_y": .12}
                             on_release: app.screen('login_screen')
-            MDScreen:
+            Scr:
                 name:  "settingsadmin"
                 MDFloatLayout:
                     MDLabel:
@@ -458,6 +508,12 @@ Screen:
                             text: 'ID: 265265'
                             pos_hint: {"center_x": .8, "center_y": .25}
                             font_size: '25sp'
+                        MDIconButton:
+                            icon: 'exit-to-app'
+                            icon_size: '35sp'
+                            tooltip_text: "Назад"
+                            pos_hint: {"center_x": .935, "center_y": .25}
+                            on_release: app.screen("login_screen")
                     MDBoxLayout:
                         orientation: "vertical"
                         size_hint_y: None
@@ -470,6 +526,7 @@ Screen:
                         padding: dp(20)
                         MDFloatLayout:
                             adaptive_height: True
+
                             MDIconButton:
                                 icon_size: '25sp'
                                 md_bg_color: "#222126"
@@ -480,7 +537,7 @@ Screen:
                             MDTextField:
                                 id: search_students
                                 mode: "round"
-                                size_hint: .8, .40
+                                size_hint: .75, .40
                                 pos_hint: {"center_x": .5, "center_y": .5}
                                 hint_text: 'Поиск по ФИО, Дата рождения, ID'
                                 on_text: app.search_students(self.text, True)
@@ -491,7 +548,7 @@ Screen:
                         MDScrollView:
                             MDList:
                                 id: container
-            MDScreen:
+            Scr:
                 name: "new_users"
                 MDBoxLayout:
                     orientation: 'vertical'
@@ -499,6 +556,7 @@ Screen:
                         size_hint: 1, .3
                         id: boxlayout
                         MDCard:
+                            id: card_for_clear
                             size_hint: .8, .5
                             pos_hint: {"center_x": .5, "center_y": .6}
                             elevation: 6
@@ -506,11 +564,39 @@ Screen:
                             MDLabel:
                                 id: text_hint_create
                                 pos_hint: {"center_x": .54, "center_y": .5}
+
                         MDRaisedButton:
                             id: boxlayout_download
                             text: 'Загрузите .xls файл'
                             pos_hint: {"center_x": .5, "center_y": .15}
                             on_release: app.manager_file_exel_open()
+                        MDIconButton:
+                            icon: 'exit-to-app'
+                            icon_size: '35sp'
+                            tooltip_text: "Назад"
+                            pos_hint: {"center_x": .95, "center_y": .25}
+                            on_release: app.screen("teacher_screen")
+                        MDCard:
+                            size_hint: .8, .85
+                            pos_hint: {"center_x": 1.5, "center_y": .5}
+                            elevation: 6
+                            orientation: "vertical"
+                            id: card_animation
+                            MDLabel:
+                                text: "Ведите почту для отправки копии списков"
+                                font_style: "H6"
+                                font_size: "22sp"
+                                pos_hint: {"center_x": .6, "center_y": .9}
+                            MDTextField:
+                                id: gmail_field
+                                hint_text: "Почта"
+                                pos_hint: {"center_x": .5, "center_y": .55}
+                                size_hint: .8, 1
+                            MDRaisedButton:
+                                text: "Отправить"
+                                pos_hint: {"center_x": .5, "center_y": .35}
+                                on_release: app.send_mail()
+
 
                     MDBoxLayout:
                         orientation: "vertical"

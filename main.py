@@ -2,6 +2,9 @@ from kivymd.uix.tab import MDTabsBase
 from kivymd.uix.floatlayout import MDFloatLayout
 from kivy.core.clipboard import Clipboard
 from kivy.core.window import Window
+from send_gmail import send_em
+from kivy.animation import Animation
+from excel_write import generate_excel
 import pandas as pd
 import openpyxl
 import random
@@ -95,6 +98,7 @@ class MoneyTest(MDApp):
     icon = "scr/logo (2).png"
     title = "Kvantomat"
     charge_contests = None
+    path = None
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -106,6 +110,7 @@ class MoneyTest(MDApp):
             preview=True
         )
         self.file_manager.ext = [".xlsx"]
+        self.fg = None
 
     def manager_file_exel_open(self):
         self.manager_open = True
@@ -114,6 +119,7 @@ class MoneyTest(MDApp):
     def select_path(self, path):
         self.exit_manager()
         self.root.ids.generate_table.clear_widgets()
+        self.path = path
         try:
             df = pd.read_excel(f'{path}')
             df['Дата рождения'] = pd.to_datetime(df['Дата рождения']).dt.strftime('%d %m %Y')
@@ -164,14 +170,14 @@ class MoneyTest(MDApp):
             self.root.ids.generate_table.add_widget(self.charge_contests)
             toast(f"{path}")
             self.root.ids.boxlayout_download.pos_hint = ({"center_x": .3, "center_y": .1})
-            self.root.ids.boxlayout.add_widget(
-                MDRaisedButton(
+            self.fg = MDRaisedButton(
+                    id="rr",
                     text='Создать пользователей',
                     pos_hint=({"center_x": .7, "center_y": .1}),
                     on_release=lambda x: self.create_users_sql()
 
                 )
-            )
+            self.root.ids.boxlayout.add_widget(self.fg)
 
         except(KeyError):
             toast("Неправильные столбцы")
@@ -185,12 +191,16 @@ class MoneyTest(MDApp):
                 three_result = cursor.fetchall()
                 print(three_result)
                 if len(three_result) == 1:
-                    pass
+                    toast("Aккаунт создан")
                 else:
                     values = [self.charge_contests.row_data[i][0], self.charge_contests.row_data[i][3], self.charge_contests.row_data[i][1], self.charge_contests.row_data[i][2]]
                     cursor.execute("INSERT INTO users(id_user, password, name, birthday) VALUES(?,md5(?),?,?)", values)
                     toast(f"Создана запись c ID {self.charge_contests.row_data[i][0]}")
-
+                anim = Animation(pos_hint=({"center_x": .5, "center_y": .5}))
+                anim.start(self.root.ids.card_animation)
+                self.root.ids.boxlayout.remove_widget(self.root.ids.card_for_clear)
+                self.root.ids.boxlayout.remove_widget(self.root.ids.boxlayout_download)
+                self.root.ids.boxlayout.remove_widget(self.fg)
 
     def exit_manager(self, *args):
         self.manager_open = False
@@ -256,18 +266,12 @@ class MoneyTest(MDApp):
         self.root.ids.charge_contests.add_widget(charge_contests)
 
     def send_mail(self):
-        df = pd.read_excel('scr/Книга1.xlsx')
-        enter_birthday = []
-        print(enter_birthday)
-        df['Дата рождения'] = pd.to_datetime(df['Дата рождения']).dt.strftime('%d %m %Y')
-        birthday_n = []
-        name_n = []
-        generate_list = []
-        birthday = df['Дата рождения']
-        name = df['ФИО']
-
-    def generate_table(self):
-        pass
+        generate_excel(f"{self.path}")
+        if len(self.root.ids.gmail_field.text) == 0:
+            toast("Введите почту")
+        else:
+            send_em(res_mail=f"{self.root.ids.gmail_field.text}")
+            self.screen("teacher_screen")
 
     def search_students(self, text="", search=False):
         if len(text) >= 4:
@@ -342,6 +346,7 @@ class MoneyTest(MDApp):
                         text="Отредактировать",
                         theme_text_color="Custom",
                         text_color=self.theme_cls.primary_color,
+                        on_release=lambda x: self.settings_balance(task_name)
                     ),
                 ],
 
@@ -370,18 +375,6 @@ class MoneyTest(MDApp):
             )
         self.dialog_confirmation.open()
 
-    def dialog_change_end(self, task):
-        with sqlite3.connect('userbase.db') as db:
-            cursor = db.cursor()
-            task = task.text
-            if task == "Изменить пароль":
-                cursor.execute("")
-            elif task == "Удалить":
-                pass
-            elif task == "Начислить":
-                pass
-            elif task == "Списание":
-                pass
 
     def dialog_windows_task(self, task):
         task = task.text
@@ -408,15 +401,6 @@ class MoneyTest(MDApp):
         self.level = f"{text_item}"
         self.root.ids.drop_menu_position.text = f"{text_item}"
 
-    def excel_enter(self):
-        df = pd.read_excel('scr/Книга1.xlsx')
-        df['Дата рождения'] = pd.to_datetime(df['Дата рождения']).dt.strftime('%d %m %Y')
-        birthday = df['Дата рождения']
-        name = df['ФИО']
-        for i in range(len(birthday)):
-            birthday_enter = birthday[i].replace(" ", ".")
-            print(f"Дата рождения: {birthday_enter}, ФИО: {name[i]}")
-
     def build(self):
         self.theme_cls.theme_style = "Dark"
         self.theme_cls.primary_palette = "Indigo"
@@ -435,6 +419,34 @@ class MoneyTest(MDApp):
                 if cursor.fetchone() is None:
                     self.root.ids.login_admin_new.text = f"{generate}"
                     break
+
+    def settings_balance(self, confirm):
+        with sqlite3.connect('userbase.db') as db:
+            cursor = db.cursor()
+            query = """
+            CREATE TABLE IF NOT EXISTS history(
+                id INTEGER PRIMARY KEY,
+                id_user TEXT,
+                sum INTEGER,
+                for_what TEXT
+
+            )
+            """
+
+            cursor.executescript(query)
+            ID = self.id.replace("ID:", "")
+            sum = int(self.dialog_change.content_cls.ids.first_field.text)
+            if confirm == "Списание":
+                values = [ID, -sum,
+                          self.dialog_change.content_cls.ids.secondary_field.text]
+                cursor.execute("INSERT INTO history(id_user, sum, for_what) VALUES(?,?,?)", values)
+                toast("Списано")
+            elif confirm == "Начислить":
+                values = [ID, sum,
+                          self.dialog_change.content_cls.ids.secondary_field.text]
+                cursor.execute("INSERT INTO history(id_user, sum, for_what) VALUES(?,?,?)", values)
+                toast("Начислино")
+
 
     def registration(self, how_screen):
         if how_screen == "Admin_screen":

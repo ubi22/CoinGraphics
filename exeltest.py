@@ -32,13 +32,7 @@ with sqlite3.connect('userbase.db') as db:
         return generate
 
     for i in range(len(birthday)):
-        if type(parents_email[i]) == float:
-            parents_email = "Отсутсвует"
-        elif type(phone[i]) == float:
-            phone = "Отсутсвует"
         birthday_enter = birthday[i].replace(" ", ".")
-        parents = parents_email[i].split(",")
-        print(parents[0])
         cursor.execute(f'''SELECT * FROM users WHERE name LIKE '%{name[i]}%';''')
         three_results = cursor.fetchall()
         if len(three_results) > 0:
