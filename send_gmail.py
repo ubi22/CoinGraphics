@@ -1,8 +1,6 @@
 import os
 from password import password
 import smtplib
-from tkinter import filedialog
-import tkinter as tk
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart

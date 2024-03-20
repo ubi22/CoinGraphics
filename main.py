@@ -4,6 +4,7 @@ from kivy.core.clipboard import Clipboard
 from kivy.core.window import Window
 from send_gmail import send_em
 from kivy.animation import Animation
+from balance import balance_def
 from excel_write import generate_excel
 import pandas as pd
 import openpyxl
@@ -91,6 +92,7 @@ class MoneyTest(MDApp):
     dialog_list = None
     dialog_change = None
     dialog_confirmation = None
+    dialog_for_send = None
     name = str
     id = int
     birthday = str
@@ -99,6 +101,7 @@ class MoneyTest(MDApp):
     title = "Kvantomat"
     charge_contests = None
     path = None
+    balance = 0
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -111,7 +114,7 @@ class MoneyTest(MDApp):
         )
         self.file_manager.ext = [".xlsx"]
         self.fg = None
-
+        self.elevation = 0
     def manager_file_exel_open(self):
         self.manager_open = True
         self.file_manager.show(os.path.expanduser("/"))
@@ -182,6 +185,17 @@ class MoneyTest(MDApp):
         except(KeyError):
             toast("Неправильные столбцы")
 
+    def balance_def(self, id):
+        with sqlite3.connect('userbase.db') as db:
+            balance = 0
+            cursor = db.cursor()
+            cursor.execute(f'''SELECT * FROM history WHERE id_user LIKE '%{id}%';''')
+            balance_enter = cursor.fetchall()
+            for s in range(len(balance_enter)):
+                balance += int(balance_enter[s][2])
+            print(balance)
+        return balance
+
     def create_users_sql(self):
         with sqlite3.connect('userbase.db') as db:
             cursor = db.cursor()
@@ -189,18 +203,13 @@ class MoneyTest(MDApp):
             for i in range(len(self.charge_contests.row_data)):
                 cursor.execute("SELECT id_user FROM users WHERE id_user = ?", [self.charge_contests.row_data[i][0]])
                 three_result = cursor.fetchall()
-                print(three_result)
                 if len(three_result) == 1:
                     toast("Aккаунт создан")
                 else:
                     values = [self.charge_contests.row_data[i][0], self.charge_contests.row_data[i][3], self.charge_contests.row_data[i][1], self.charge_contests.row_data[i][2]]
                     cursor.execute("INSERT INTO users(id_user, password, name, birthday) VALUES(?,md5(?),?,?)", values)
                     toast(f"Создана запись c ID {self.charge_contests.row_data[i][0]}")
-                anim = Animation(pos_hint=({"center_x": .5, "center_y": .5}))
-                anim.start(self.root.ids.card_animation)
-                self.root.ids.boxlayout.remove_widget(self.root.ids.card_for_clear)
-                self.root.ids.boxlayout.remove_widget(self.root.ids.boxlayout_download)
-                self.root.ids.boxlayout.remove_widget(self.fg)
+                self.dialog_email_send()
 
     def exit_manager(self, *args):
         self.manager_open = False
@@ -267,19 +276,18 @@ class MoneyTest(MDApp):
 
     def send_mail(self):
         generate_excel(f"{self.path}")
-        if len(self.root.ids.gmail_field.text) == 0:
+        if len(self.dialog_for_send.content_cls.ids.email_for_send.text) == 0:
             toast("Введите почту")
         else:
             send_em(res_mail=f"{self.root.ids.gmail_field.text}")
             self.screen("teacher_screen")
 
     def search_students(self, text="", search=False):
-        if len(text) >= 4:
+        if len(text) >= 2:
             with sqlite3.connect('userbase.db') as db:
                 cursor = db.cursor()
                 cursor.execute(f'''SELECT * FROM users WHERE name LIKE '%{text.title()}%';''')
                 three_results = cursor.fetchall()
-                print(three_results)
                 self.root.ids.container.clear_widgets()
                 for i in range(len(three_results)):
                     self.root.ids.container.add_widget(
@@ -287,17 +295,22 @@ class MoneyTest(MDApp):
                             text=f'{three_results[i][3]}',
                             secondary_text=f"{three_results[i][4]}",
                             tertiary_text=f"ID: {three_results[i][1]}",
-                            on_press=lambda x: self.dialog_windows(x)
+                            on_release=lambda x: self.dialog_windows(x)
                         ),
                     )
 
     def dialog_windows(self, task_windows):
+        print(task_windows.text, task_windows.secondary_text)
         self.name = task_windows.text
         self.birthday = task_windows.secondary_text
         self.id = task_windows.tertiary_text
+        balance = balance_def(f"{self.id}")
+        if self.dialog_list:
+            self.dialog_list = None
         if not self.dialog_list:
             self.dialog_list = MDDialog(
-                title=f"{task_windows.text}",
+                title=f"{self.name}",
+                text=f"Баланс: {balance}",
                 type="simple",
                 radius=[20, 7, 20, 7],
                 items=[
@@ -308,14 +321,43 @@ class MoneyTest(MDApp):
                 ],
 
             )
-        self.dialog_list.open()
+            self.dialog_list.open()
 
     def dialog_close(self, a):
         print(a)
         eval(f"self.{a}.dismiss()")
 
+    def dialog_email_send(self):
+        if not self.dialog_for_send:
+            self.dialog_for_send = MDDialog(
+                radius=[20, 7, 20, 7],
+                title="Введите почту для отправки копии списков",
+                type="custom",
+                content_cls=MDBoxLayout(
+                    MDTextField(
+                        id="email_for_send",
+                        hint_text="Почта",
+                    ),
+                    orientation="vertical",
+                    spacing="12dp",
+                    size_hint_y=None,
+                    height="60dp",
+                ),
+                buttons=[
+                    MDFlatButton(
+                        text="Отправить",
+                        text_color=self.theme_cls.primary_color,
+                        on_release=lambda x: self.send_mail()
+                    ),
+                ],
+
+            )
+        self.dialog_for_send.open()
+
     def dialog_windows_change(self, task_name):
         self.dialog_close("dialog_list")
+        if self.dialog_change:
+            self.dialog_list = None
         if not self.dialog_change:
             self.dialog_change = MDDialog(
                 radius=[20, 7, 20, 7],
@@ -324,6 +366,7 @@ class MoneyTest(MDApp):
                 content_cls=MDBoxLayout(
                     MDTextField(
                         id="first_field",
+                        input_filter='float',
                         hint_text=f"Пороль",
                     ),
                     MDTextField(
@@ -374,7 +417,6 @@ class MoneyTest(MDApp):
                 ],
             )
         self.dialog_confirmation.open()
-
 
     def dialog_windows_task(self, task):
         task = task.text
@@ -434,19 +476,23 @@ class MoneyTest(MDApp):
             """
 
             cursor.executescript(query)
-            ID = self.id.replace("ID:", "")
             sum = int(self.dialog_change.content_cls.ids.first_field.text)
+            balance = balance_def(self.id)
             if confirm == "Списание":
-                values = [ID, -sum,
-                          self.dialog_change.content_cls.ids.secondary_field.text]
-                cursor.execute("INSERT INTO history(id_user, sum, for_what) VALUES(?,?,?)", values)
-                toast("Списано")
+                if balance < sum:
+                    toast("Недостаточно средст")
+                else:
+                    values = [self.id, -sum,
+                              self.dialog_change.content_cls.ids.secondary_field.text]
+                    cursor.execute("INSERT INTO history(id_user, sum, for_what) VALUES(?,?,?)", values)
+                    toast("Списано")
+                    self.dialog_close("dialog_change")
             elif confirm == "Начислить":
-                values = [ID, sum,
+                values = [self.id, sum,
                           self.dialog_change.content_cls.ids.secondary_field.text]
                 cursor.execute("INSERT INTO history(id_user, sum, for_what) VALUES(?,?,?)", values)
                 toast("Начислино")
-
+                self.dialog_close("dialog_change")
 
     def registration(self, how_screen):
         if how_screen == "Admin_screen":

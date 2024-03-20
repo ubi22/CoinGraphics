@@ -4,15 +4,6 @@
         source: 'scr/4882066.jpg'
         size_hint_y: 1
         pos_hint: {"center_x": .5, "center_y": .5}
-<Content>
-    orientation: "vertical"
-    spacing: "12dp"
-    size_hint_y: None
-    height: "120dp"
-    MDTextField:
-        id: charge_contests
-        hint_text: ""
-        size_hint: 1, .07
 <ContentNavigationDrawer>:
     orientation: "vertical"
     padding: "8dp"
@@ -207,7 +198,7 @@ Screen:
                                                 text: "20$"
                                                 font_size: "23sp"
                                                 pos_hint: {"center_x": .26, "center_y": .2}
-                                            MDRaisedButton:
+                                            MDRectangleFlatButton:
                                                 text: "Купить"
                                                 pos_hint: {"center_x": .7, "center_y": .2}
                                                 size_hint: .08, .09
@@ -544,7 +535,6 @@ Screen:
                             MDIconButton:
                                 icon: 'magnify'
                                 pos_hint: {"center_x": .85, "center_y": .5}
-                                on_release: app.search_news()
                         MDScrollView:
                             MDList:
                                 id: container
@@ -576,27 +566,6 @@ Screen:
                             tooltip_text: "Назад"
                             pos_hint: {"center_x": .95, "center_y": .25}
                             on_release: app.screen("teacher_screen")
-                        MDCard:
-                            size_hint: .8, .85
-                            pos_hint: {"center_x": 1.5, "center_y": .5}
-                            elevation: 6
-                            orientation: "vertical"
-                            id: card_animation
-                            MDLabel:
-                                text: "Ведите почту для отправки копии списков"
-                                font_style: "H6"
-                                font_size: "22sp"
-                                pos_hint: {"center_x": .6, "center_y": .9}
-                            MDTextField:
-                                id: gmail_field
-                                hint_text: "Почта"
-                                pos_hint: {"center_x": .5, "center_y": .55}
-                                size_hint: .8, 1
-                            MDRaisedButton:
-                                text: "Отправить"
-                                pos_hint: {"center_x": .5, "center_y": .35}
-                                on_release: app.send_mail()
-
 
                     MDBoxLayout:
                         orientation: "vertical"

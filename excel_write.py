@@ -4,7 +4,7 @@ import random
 
 
 def generate_excel(excel_file):
-    df = pd.read_excel("D:\Книга1.xlsx")
+    df = pd.read_excel(f"{excel_file}")
     df['Дата рождения'] = pd.to_datetime(df['Дата рождения']).dt.strftime('%d %m %Y')
     birthday = df['Дата рождения']
     name = df['ФИО']
@@ -36,5 +36,3 @@ def generate_excel(excel_file):
     enter_list = dict(enter_list)
     df = pd.DataFrame(enter_list)
     df.to_excel('./list_user.xlsx')
-
-generate_excel("adad")
