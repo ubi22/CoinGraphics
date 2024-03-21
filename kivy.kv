@@ -127,10 +127,10 @@ Screen:
                             pos_hint: {'center_x': .53, 'center_y': .3}
                             size_hint: 1, .12
                             TooltipIcon:
-                                icon: "alpha-k"
+                                icon: "account-child"
                                 tooltip_text: "Профиль"
                                 pos_hint: {'center_x': .1, 'center_y': .3}
-                                icon_size: '50sp'
+                                icon_size: '30sp'
                                 on_release:
                                     app.screen("user_profile")
                             MDFlatButton:
@@ -166,12 +166,8 @@ Screen:
                             title: "          История         "
                             ScrollView:
                                 MDList:
-                                    ThreeLineAvatarListItem:
-                                        text: "+20"
-                                        secondary_text: "начисление за хорошее поведенние"
-                                        tertiary_text: "02.11.2009"
-                                        IconLeftWidget:
-                                            icon: "decimal-comma-increase"
+                                    id: scroll_history
+
                         Tab:
                             title: "         Магазин         "
                             MDScrollView:
@@ -195,10 +191,10 @@ Screen:
                                                 font_size: "14sp"
                                                 pos_hint: {"center_x": .5, "center_y": .4}
                                             MDFlatButton:
-                                                text: "20$"
+                                                text: "20"
                                                 font_size: "23sp"
                                                 pos_hint: {"center_x": .26, "center_y": .2}
-                                            MDRectangleFlatButton:
+                                            MDRaisedButton:
                                                 text: "Купить"
                                                 pos_hint: {"center_x": .7, "center_y": .2}
                                                 size_hint: .08, .09
@@ -217,7 +213,7 @@ Screen:
                                                 font_size: "14sp"
                                                 pos_hint: {"center_x": .5, "center_y": .4}
                                             MDFlatButton:
-                                                text: "60$"
+                                                text: "60"
                                                 font_size: "23sp"
                                                 pos_hint: {"center_x": .26, "center_y": .2}
                                             MDRaisedButton:
@@ -239,7 +235,7 @@ Screen:
                                                 font_size: "14sp"
                                                 pos_hint: {"center_x": .5, "center_y": .4}
                                             MDFlatButton:
-                                                text: "50$"
+                                                text: "50"
                                                 font_size: "23sp"
                                                 pos_hint: {"center_x": .26, "center_y": .2}
                                             MDRaisedButton:
@@ -261,7 +257,7 @@ Screen:
                                                 font_size: "14sp"
                                                 pos_hint: {"center_x": .5, "center_y": .4}
                                             MDFlatButton:
-                                                text: "60$"
+                                                text: "60"
                                                 font_size: "23sp"
                                                 pos_hint: {"center_x": .26, "center_y": .2}
                                             MDRaisedButton:
@@ -363,11 +359,6 @@ Screen:
                             pos_hint: {"center_x": .5, "center_y": .15}
                             MDList:
                                 scroll_y: None
-                                OneLineAvatarListItem:
-                                    on_release: app.screen("settingadmin")
-                                    text: "Настройки профиля"
-                                    IconLeftWidget:
-                                        icon: "cog"
                                 OneLineAvatarListItem:
                                     on_release: app.screen("login_screen")
                                     text: "Выйти"
@@ -561,10 +552,10 @@ Screen:
                             pos_hint: {"center_x": .5, "center_y": .15}
                             on_release: app.manager_file_exel_open()
                         MDIconButton:
-                            icon: 'exit-to-app'
+                            icon: 'arrow-left-bold-box-outline'
                             icon_size: '35sp'
                             tooltip_text: "Назад"
-                            pos_hint: {"center_x": .95, "center_y": .25}
+                            pos_hint: {"center_x": .95, "center_y": .15}
                             on_release: app.screen("teacher_screen")
 
                     MDBoxLayout:

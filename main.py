@@ -3,9 +3,13 @@ from kivymd.uix.floatlayout import MDFloatLayout
 from kivy.core.clipboard import Clipboard
 from kivy.core.window import Window
 from send_gmail import send_em
+from kivymd.uix.list import OneLineAvatarIconListItem, IconLeftWidget
+from kivymd.uix.list import ThreeLineIconListItem
+import time
+t = time.localtime()
 from kivy.animation import Animation
+from datetime import datetime
 from balance import balance_def
-from excel_write import generate_excel
 import pandas as pd
 import openpyxl
 import random
@@ -57,8 +61,16 @@ with sqlite3.connect('userbase.db') as db:
         password TEXT,
         name TEXT,
         birthday TEXT
-
-)
+    )
+    """
+    cursor.executescript(query)
+    query = """
+    CREATE TABLE IF NOT EXISTS history(
+        id_user TEXT,
+        sum INTEGER,
+        for_what TEXT,
+        time TEXT
+    )
     """
 
     cursor.executescript(query)
@@ -92,6 +104,7 @@ class MoneyTest(MDApp):
     dialog_list = None
     dialog_change = None
     dialog_confirmation = None
+    dialog_settings_account = None
     dialog_for_send = None
     name = str
     id = int
@@ -115,6 +128,7 @@ class MoneyTest(MDApp):
         self.file_manager.ext = [".xlsx"]
         self.fg = None
         self.elevation = 0
+
     def manager_file_exel_open(self):
         self.manager_open = True
         self.file_manager.show(os.path.expanduser("/"))
@@ -147,7 +161,7 @@ class MoneyTest(MDApp):
                     three_results = cursor.fetchall()
                     if len(three_results) > 0:
                         generates = three_results[0][1]
-                        data.append([f"{generates}", f"{name[i]}", f'{birthday_enter}', "не известин"])
+                        data.append([f"{generates}", f"{name[i]}", f'{birthday_enter}', "Уже есть"])
                     else:
                         generates = generate()
                         data.append([f"{generates}", f"{name[i]}", f'{birthday_enter}', '12345678'])
@@ -170,6 +184,23 @@ class MoneyTest(MDApp):
                     ] for i in range(len(data))
                 ],
             )
+            birthday_list = []
+            id_list = []
+            name_list = []
+            enter_list = []
+            password_list = []
+            for i in  range(len(data)):
+                id_list.append(data[i][0])
+                name_list.append(data[i][1])
+                birthday_list.append(data[i][2])
+                password_list.append(data[i][3])
+            enter_list.append(["ID", id_list])
+            enter_list.append(["ФИО", name_list])
+            enter_list.append(["Дата рождение", birthday_list])
+            enter_list.append(["Пароль", password_list])
+            enter_list = dict(enter_list)
+            df = pd.DataFrame(enter_list)
+            df.to_excel('./list_user.xlsx')
             self.root.ids.generate_table.add_widget(self.charge_contests)
             toast(f"{path}")
             self.root.ids.boxlayout_download.pos_hint = ({"center_x": .3, "center_y": .1})
@@ -184,17 +215,6 @@ class MoneyTest(MDApp):
 
         except(KeyError):
             toast("Неправильные столбцы")
-
-    def balance_def(self, id):
-        with sqlite3.connect('userbase.db') as db:
-            balance = 0
-            cursor = db.cursor()
-            cursor.execute(f'''SELECT * FROM history WHERE id_user LIKE '%{id}%';''')
-            balance_enter = cursor.fetchall()
-            for s in range(len(balance_enter)):
-                balance += int(balance_enter[s][2])
-            print(balance)
-        return balance
 
     def create_users_sql(self):
         with sqlite3.connect('userbase.db') as db:
@@ -275,12 +295,12 @@ class MoneyTest(MDApp):
         self.root.ids.charge_contests.add_widget(charge_contests)
 
     def send_mail(self):
-        generate_excel(f"{self.path}")
         if len(self.dialog_for_send.content_cls.ids.email_for_send.text) == 0:
             toast("Введите почту")
         else:
-            send_em(res_mail=f"{self.root.ids.gmail_field.text}")
+            send_em(res_mail=f"{self.dialog_for_send.content_cls.ids.email_for_send.text}")
             self.screen("teacher_screen")
+            self.dialog_close("dialog_for_send")
 
     def search_students(self, text="", search=False):
         if len(text) >= 2:
@@ -357,7 +377,7 @@ class MoneyTest(MDApp):
     def dialog_windows_change(self, task_name):
         self.dialog_close("dialog_list")
         if self.dialog_change:
-            self.dialog_list = None
+            self.dialog_change = None
         if not self.dialog_change:
             self.dialog_change = MDDialog(
                 radius=[20, 7, 20, 7],
@@ -367,11 +387,11 @@ class MoneyTest(MDApp):
                     MDTextField(
                         id="first_field",
                         input_filter='float',
-                        hint_text=f"Пороль",
+                        hint_text=f"Пароль",
                     ),
                     MDTextField(
                         id="secondary_field",
-                        hint_text=f"Потвердите пороль",
+                        hint_text=f"Потвердите пароль",
                     ),
                     orientation="vertical",
                     spacing="12dp",
@@ -394,7 +414,7 @@ class MoneyTest(MDApp):
                 ],
 
             )
-        self.dialog_change.open()
+            self.dialog_change.open()
 
     def dialog_windows_confirmation(self):
         if not self.dialog_confirmation:
@@ -465,36 +485,29 @@ class MoneyTest(MDApp):
     def settings_balance(self, confirm):
         with sqlite3.connect('userbase.db') as db:
             cursor = db.cursor()
-            query = """
-            CREATE TABLE IF NOT EXISTS history(
-                id INTEGER PRIMARY KEY,
-                id_user TEXT,
-                sum INTEGER,
-                for_what TEXT
-
-            )
-            """
-
-            cursor.executescript(query)
             sum = int(self.dialog_change.content_cls.ids.first_field.text)
             balance = balance_def(self.id)
+            date = datetime.now().strftime('%d %m %Y').replace(" ", ".")
+            current_date = f"{date}  {time.strftime('%H:%M', t)}"
+            print(current_date)
             if confirm == "Списание":
                 if balance < sum:
                     toast("Недостаточно средст")
                 else:
                     values = [self.id, -sum,
-                              self.dialog_change.content_cls.ids.secondary_field.text]
-                    cursor.execute("INSERT INTO history(id_user, sum, for_what) VALUES(?,?,?)", values)
+                              self.dialog_change.content_cls.ids.secondary_field.text, current_date]
+                    cursor.execute("INSERT INTO history(id_user, sum, for_what, time) VALUES(?,?,?,?)", values)
                     toast("Списано")
                     self.dialog_close("dialog_change")
             elif confirm == "Начислить":
                 values = [self.id, sum,
-                          self.dialog_change.content_cls.ids.secondary_field.text]
-                cursor.execute("INSERT INTO history(id_user, sum, for_what) VALUES(?,?,?)", values)
+                          self.dialog_change.content_cls.ids.secondary_field.text, current_date]
+                cursor.execute("INSERT INTO history(id_user, sum, for_what, time) VALUES(?,?,?,?)", values)
                 toast("Начислино")
                 self.dialog_close("dialog_change")
 
     def registration(self, how_screen):
+
         if how_screen == "Admin_screen":
             login = self.root.ids.login_admin_new.text
             password = self.root.ids.password_admin_new.text
@@ -512,7 +525,7 @@ class MoneyTest(MDApp):
             if cursor.fetchone() is None:
                 values = [login, password, name, birthday]
                 cursor.execute("INSERT INTO users(id_user, password, name, birthday) VALUES(?,md5(?),?,?)", values)
-                toast("Создали акаунт")
+                toast("Создали аккаунт")
                 self.screen("login_screen")
                 # self.root.ids.screen_manager.current = "Enter"
                 db.commit()
@@ -522,6 +535,49 @@ class MoneyTest(MDApp):
         finally:
             cursor.close()
             db.close()
+
+    def dialog_settings_accounts(self):
+        if not self.dialog_settings_account:
+            self.dialog_settings_account = MDDialog(
+                title="Измените пароль по умолчанию",
+                type="custom",
+                content_cls=MDBoxLayout(
+                    MDTextField(
+                        id="password_input",
+                        hint_text=f"Пароль",
+                    ),
+                    orientation="vertical",
+                    spacing="12dp",
+                    size_hint_y=None,
+                    height="60dp",
+                ),
+                buttons=[
+                    MDRaisedButton(
+                        text="Изменить",
+                        on_release=lambda x: self.settings_password()
+                    ),
+                ],
+            )
+        self.dialog_settings_account.open()
+
+    def user_scroll_balance(self, ids):
+        with sqlite3.connect("userbase.db") as db:
+            cursor = db.cursor()
+            cursor.execute(f'''SELECT * FROM history WHERE id_user LIKE '%ID: {ids}%';''')
+            result = cursor.fetchall()
+            for i in range(len(result)):
+                self.root.ids.scroll_history.add_widget(
+                    ThreeLineIconListItem(
+                        IconLeftWidget(
+                            icon="history"
+                        ),
+                        text=f"{result[i][1]}",
+                        secondary_text=f"{result[i][2]}",
+                        tertiary_text=f"{result[i][3]}"
+                ))
+
+    def settings_password(self):
+       print(self.dialog_settings_account.content_cls.ids.password_input.text)
 
     def log_in(self):
         login = self.root.ids.login.text
@@ -541,21 +597,28 @@ class MoneyTest(MDApp):
                 else:
                     cursor.execute("SELECT id_user FROM users WHERE id_user = ? AND password = md5(?)", [login, password])
                     if cursor.fetchone() is None:
-                        toast("Пороль не верный")
+                        toast("Пароль не верный")
                     else:
+                        cursor.execute(f'''SELECT * FROM users WHERE id_user LIKE '%{login}%';''')
+                        three_results = cursor.fetchall()
+                        name = three_results[0][3]
+                        name = name.split()
+                        birthday = three_results[0][4]
                         if len(login) == 5:
                             toast("Вы вошли")
-                            cursor.execute(f'''SELECT * FROM users WHERE id_user LIKE '%{login}%';''')
-                            three_results = cursor.fetchall()
-                            name = three_results[0][3]
-                            name = name.split()
-                            birthday = three_results[0][4]
                             self.root.ids.name_main_screen.text = f"{name[1]} >"
                             self.root.ids.name_profile_main.text = f"{name[0]}\n {name[1]} {name[2]}"
                             self.root.ids.birthday_profile_main.text = f"{birthday}"
                             self.root.ids.screen_manager.current = "main_screen"
+                            self.root.ids.balance_user.text = f"{balance_def(three_results[0][1])}"
+                            self.user_scroll_balance(three_results[0][1])
+                            if password == "12345678":
+                                self.dialog_settings_accounts()
                         elif len(login) == 6:
                             toast("Вы вошли")
+                            self.root.ids.name_teacher_screen.text = f"{name[0]} {name[1]} {name[2]}"
+                            self.root.ids.birthday_teacher_screen.text = f"{birthday}"
+                            self.root.ids.id_teacher_screen.text = f"ID: {three_results[0][1]}"
                             self.root.ids.screen_manager.current = "teacher_screen"
                         elif len(login) == 7:
                             toast("Вы вошли")
