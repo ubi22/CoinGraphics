@@ -422,9 +422,9 @@ Screen:
                 name:  "settingsadmin"
                 MDFloatLayout:
                     MDLabel:
-                        text: "Заполините данные\nнового админа "
+                        text: "Заполините данные\nнового преподавателя"
                         pos_hint: {"center_x": .5, "center_y": .9}
-                        font_size: '50sp'
+                        font_size: '45sp'
                         halign: 'center'
                     MDTextField:
                         id: login_admin_new
@@ -442,7 +442,7 @@ Screen:
                         mode: "rectangle"
                         size_hint: .85, .07
                         width: "400dp"
-                        hint_text: "Пороль"
+                        hint_text: "Пароль"
                         pos_hint: {"center_x": .5, "center_y": .65}
                     MDTextField:
                         id: name_admin_new
@@ -458,10 +458,17 @@ Screen:
                         width: "400dp"
                         hint_text: "День рождение"
                         pos_hint: {"center_x": .5, "center_y": .45}
+                    MDTextField:
+                        id: email_new_admin
+                        mode: "rectangle"
+                        size_hint: .85, .07
+                        width: "400dp"
+                        hint_text: "Почта"
+                        pos_hint: {"center_x": .5, "center_y": .35}
                     MDRaisedButton:
                         text: "Создать"
                         text_size: "39sp"
-                        pos_hint: {"center_x": .5, "center_y": .3}
+                        pos_hint: {"center_x": .5, "center_y": .15}
                         on_release:
                             app.registration("Admin_screen")
             Scr:

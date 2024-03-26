@@ -14,6 +14,7 @@ with sqlite3.connect('userbase.db') as db:
 
     cursor.executescript(query)
 
+
 def balance_def(id):
     with sqlite3.connect('userbase.db') as db:
         cursor = db.cursor()

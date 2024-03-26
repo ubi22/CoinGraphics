@@ -1,8 +1,9 @@
+import requests
 from kivymd.uix.tab import MDTabsBase
 from kivymd.uix.floatlayout import MDFloatLayout
 from kivy.core.clipboard import Clipboard
 from kivy.core.window import Window
-from send_gmail import send_em
+from send_gmail import send_em, send_admim
 from kivymd.uix.list import OneLineAvatarIconListItem, IconLeftWidget
 from kivymd.uix.list import ThreeLineIconListItem
 import time
@@ -335,7 +336,6 @@ class MoneyTest(MDApp):
                 radius=[20, 7, 20, 7],
                 items=[
                     Item(text="Сбросить пароль", on_release=lambda x=task_windows.text: self.dialog_windows_task(x)),
-                    Item(text="Удалить", on_release=lambda x=task_windows.text: self.dialog_windows_task(x)),
                     Item(text="Начислить", on_release=lambda x=task_windows.text: self.dialog_windows_task(x)),
                     Item(text="Списание", on_release=lambda x=task_windows.text: self.dialog_windows_task(x)),
                 ],
@@ -432,11 +432,20 @@ class MoneyTest(MDApp):
                         text="Да",
                         theme_text_color="Custom",
                         text_color=self.theme_cls.primary_color,
-                        on_release=lambda x: self.dialog_change_end(x)
+                        on_release=lambda x: self.clear_password()
                     ),
                 ],
             )
         self.dialog_confirmation.open()
+
+    def clear_password(self):
+        with sqlite3.connect('userbase.db') as db:
+            cursor = db.cursor()
+            db.create_function("md5", 1, md5sum)
+            id = self.id.replace("ID: ","")
+            print(id)
+            cursor.execute(f"UPDATE users SET password = md5('12345678') WHERE id_user = {id}")
+            self.dialog_close("dialog_confirmation")
 
     def dialog_windows_task(self, task):
         task = task.text
@@ -513,6 +522,7 @@ class MoneyTest(MDApp):
             password = self.root.ids.password_admin_new.text
             name = self.root.ids.name_admin_new.text
             birthday = self.root.ids.birthday_admin_new.text
+            email = self.root.ids.email_new_admin.text
         else:
             pass
 
@@ -526,9 +536,12 @@ class MoneyTest(MDApp):
                 values = [login, password, name, birthday]
                 cursor.execute("INSERT INTO users(id_user, password, name, birthday) VALUES(?,md5(?),?,?)", values)
                 toast("Создали аккаунт")
+                send_admim(message=f"Ваш данные для входа: \nЛогин: {login}\nПароль: {password}", res_mail=email)
+
                 self.screen("login_screen")
                 # self.root.ids.screen_manager.current = "Enter"
                 db.commit()
+
             else:
                 toast("Tакой логин уже есть")
 
@@ -577,7 +590,11 @@ class MoneyTest(MDApp):
                 ))
 
     def settings_password(self):
-       print(self.dialog_settings_account.content_cls.ids.password_input.text)
+        with sqlite3.connect('userbase.db') as db:
+            cursor = db.cursor()
+            db.create_function("md5", 1, md5sum)
+            cursor.execute(f"UPDATE users SET password = md5('{self.dialog_settings_account.content_cls.ids.password_input.text}') WHERE id_user = {self.root.ids.login.text}")
+            self.dialog_close("dialog_settings_account")
 
     def log_in(self):
         login = self.root.ids.login.text
