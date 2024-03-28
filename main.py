@@ -143,6 +143,9 @@ class MoneyTest(MDApp):
             df['Дата рождения'] = pd.to_datetime(df['Дата рождения']).dt.strftime('%d %m %Y')
             birthday = df['Дата рождения']
             name = df['ФИО']
+            name_parents = df["Родители"]
+            phone = df['Контакты']
+            email = df['Почта']
             with sqlite3.connect('userbase.db') as db:
                 cursor = db.cursor()
 
@@ -162,10 +165,14 @@ class MoneyTest(MDApp):
                     three_results = cursor.fetchall()
                     if len(three_results) > 0:
                         generates = three_results[0][1]
-                        data.append([f"{generates}", f"{name[i]}", f'{birthday_enter}', "Уже есть"])
+                        data.append(
+                            [f"{generates}", f"{name[i]}", f'{birthday_enter}', "Уже есть", f"{name_parents[i]}",
+                             f"{phone[i]}", f"{email[i]}"])
                     else:
                         generates = generate()
-                        data.append([f"{generates}", f"{name[i]}", f'{birthday_enter}', '12345678'])
+                        data.append(
+                            [f"{generates}", f"{name[i]}", f'{birthday_enter}', '12345678', f"{name_parents[i]}",
+                             f"{phone[i]}", f"{email[i]}"])
                 print(len(data))
             self.charge_contests = MDDataTable(
                 size_hint=(0.9, 1),
@@ -175,6 +182,9 @@ class MoneyTest(MDApp):
                     ("ФИО", dp(52)),
                     ("Дата рождения", dp(19)),
                     ("Пароль", dp(19.2)),
+                    ("Родители", dp(52)),
+                    ("Контакты", dp(25)),
+                    ("Почта", dp(45)),
                 ],
                 row_data=[
                     [
@@ -182,9 +192,13 @@ class MoneyTest(MDApp):
                         f"{data[i][1]}",
                         f"{data[i][2]}",
                         f"{data[i][3]}",
+                        f"{data[i][4]}",
+                        f"{data[i][5]}",
+                        f"{data[i][6]}",
                     ] for i in range(len(data))
                 ],
             )
+
             birthday_list = []
             id_list = []
             name_list = []
@@ -228,7 +242,7 @@ class MoneyTest(MDApp):
                     toast("Aккаунт создан")
                 else:
                     values = [self.charge_contests.row_data[i][0], self.charge_contests.row_data[i][3], self.charge_contests.row_data[i][1], self.charge_contests.row_data[i][2]]
-                    cursor.execute("INSERT INTO users(id_user, password, name, birthday) VALUES(?,md5(?),?,?)", values)
+                    cursor.execute("INSERT INTO users(id_user, password, name, birthday, name) VALUES(?,md5(?),?,?)", values)
                     toast(f"Создана запись c ID {self.charge_contests.row_data[i][0]}")
                 self.dialog_email_send()
 
@@ -432,20 +446,28 @@ class MoneyTest(MDApp):
                         text="Да",
                         theme_text_color="Custom",
                         text_color=self.theme_cls.primary_color,
-                        on_release=lambda x: self.clear_password()
+                        on_release=lambda x: self.clear_account()
                     ),
                 ],
             )
         self.dialog_confirmation.open()
 
-    def clear_password(self):
+    def clear_account(self):
         with sqlite3.connect('userbase.db') as db:
             cursor = db.cursor()
-            db.create_function("md5", 1, md5sum)
-            id = self.id.replace("ID: ","")
-            print(id)
-            cursor.execute(f"UPDATE users SET password = md5('12345678') WHERE id_user = {id}")
-            self.dialog_close("dialog_confirmation")
+            if self.dialog_confirmation.text == "Все данные о пользователе будут стерты без возратно":
+                id = self.id.replace("ID: ", "")
+                cursor.execute(f"DELETE FROM users WHERE id_user = '{id}';")
+                toast("Аккаунт удален")
+                self.dialog_close("dialog_confirmation")
+                self.dialog_close("dialog_list")
+            else:
+                db.create_function("md5", 1, md5sum)
+                id = self.id.replace("ID: ", "")
+                cursor.execute(f"UPDATE users SET password = md5('12345678') WHERE id_user = {id}")
+                self.dialog_close("dialog_confirmation")
+                self.dialog_close("dialog_list")
+                self.root.ids.container.clear_widgets()
 
     def dialog_windows_task(self, task):
         task = task.text
