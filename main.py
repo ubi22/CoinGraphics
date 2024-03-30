@@ -1,22 +1,16 @@
 import requests
 from kivymd.uix.tab import MDTabsBase
 from kivymd.uix.floatlayout import MDFloatLayout
-from kivy.core.clipboard import Clipboard
 from kivy.core.window import Window
 from send_gmail import send_em, send_admim
 from kivymd.uix.list import OneLineAvatarIconListItem, IconLeftWidget
 from kivymd.uix.list import ThreeLineIconListItem
-import time
-t = time.localtime()
 from kivy.animation import Animation
 from datetime import datetime
 from balance import balance_def
-import pandas as pd
-import openpyxl
 import random
-import sqlite3
+import kvant_py
 from kivymd.uix.button import MDRaisedButton
-import pandas as pd
 from kivy.lang import Builder
 from kivymd.uix.filemanager import MDFileManager
 from kivy.properties import ObjectProperty
@@ -108,7 +102,8 @@ class MoneyTest(MDApp):
     dialog_settings_account = None
     dialog_for_send = None
     name = str
-    id = int
+    password = str
+    id = str
     birthday = str
     user_modified = str
     icon = "scr/logo (2).png"
@@ -499,9 +494,6 @@ class MoneyTest(MDApp):
         self.theme_cls.primary_palette = "Indigo"
         return Builder.load_file("kivy.kv")
 
-    def copy_button_text(self):
-        Clipboard.copy(self.root.ids.id_users.text)
-
     def generate(self):
         with sqlite3.connect('userbase.db') as db:
             cursor = db.cursor()
@@ -537,39 +529,20 @@ class MoneyTest(MDApp):
                 toast("Начислино")
                 self.dialog_close("dialog_change")
 
-    def registration(self, how_screen):
-
-        if how_screen == "Admin_screen":
+    def registration(self):
             login = self.root.ids.login_admin_new.text
             password = self.root.ids.password_admin_new.text
             name = self.root.ids.name_admin_new.text
             birthday = self.root.ids.birthday_admin_new.text
             email = self.root.ids.email_new_admin.text
-        else:
-            pass
-
-        try:
-            db = sqlite3.connect("userbase.db")
-            cursor = db.cursor()
-            db.create_function("md5", 1, md5sum)
-            cursor.execute("SELECT id_user FROM users WHERE id_user = ?", [login])
-
-            if cursor.fetchone() is None:
-                values = [login, password, name, birthday]
-                cursor.execute("INSERT INTO users(id_user, password, name, birthday) VALUES(?,md5(?),?,?)", values)
-                toast("Создали аккаунт")
-                send_admim(message=f"Ваш данные для входа: \nЛогин: {login}\nПароль: {password}", res_mail=email)
+            toast("Создали аккаунт")
+            if requests.get(f"http://127.0.0.1:8000/does_exist/{login}").text == "true":
+                toast("Такой логин есть")
+            else:
+                json = kvant_py.create_user(f"{login}", f"{name}", f"{birthday}", f"{password}", f"{self.id}", f"{self.password}")
+                requests.post(url="http://127.0.0.1:8000/execute", data=json.encode("utf-8"))
 
                 self.screen("login_screen")
-                # self.root.ids.screen_manager.current = "Enter"
-                db.commit()
-
-            else:
-                toast("Tакой логин уже есть")
-
-        finally:
-            cursor.close()
-            db.close()
 
     def dialog_settings_accounts(self):
         if not self.dialog_settings_account:
@@ -621,51 +594,24 @@ class MoneyTest(MDApp):
     def log_in(self):
         login = self.root.ids.login.text
         password = self.root.ids.password.text
-        if login == 'admin':
-            if password == '1234':
-                toast("Здраствуйте Admin")
+        check = requests.get(f"http://127.0.0.1:8000/check_login_credentials?login={login}&password={password}").text
+        if check == "true":
+            if len(login) == 5:
+                toast("Вы вошли")
+                self.id = login
+                self.password = password
+                self.root.ids.screen_manager.current = "settingsadmin"
+                if password == "12345678":
+                    self.dialog_settings_accounts()
+            elif len(login) == 6:
+                toast("Вы вошли")
+                self.root.ids.screen_manager.current = "teacher_screen"
+            elif len(login) == 7:
+                toast("Вы вошли")
                 self.root.ids.screen_manager.current = "admin_screen"
         else:
-            try:
-                db = sqlite3.connect("userbase.db")
-                cursor = db.cursor()
-                db.create_function("md5", 1, md5sum)
-                cursor.execute("SELECT id_user FROM users WHERE id_user = ?", [login])
-                if cursor.fetchone() is None:
-                    toast("Такого логина не существует")
-                else:
-                    cursor.execute("SELECT id_user FROM users WHERE id_user = ? AND password = md5(?)", [login, password])
-                    if cursor.fetchone() is None:
-                        toast("Пароль не верный")
-                    else:
-                        cursor.execute(f'''SELECT * FROM users WHERE id_user LIKE '%{login}%';''')
-                        three_results = cursor.fetchall()
-                        name = three_results[0][3]
-                        name = name.split()
-                        birthday = three_results[0][4]
-                        if len(login) == 5:
-                            toast("Вы вошли")
-                            self.root.ids.name_main_screen.text = f"{name[1]} >"
-                            self.root.ids.name_profile_main.text = f"{name[0]}\n {name[1]} {name[2]}"
-                            self.root.ids.birthday_profile_main.text = f"{birthday}"
-                            self.root.ids.screen_manager.current = "main_screen"
-                            self.root.ids.balance_user.text = f"{balance_def(three_results[0][1])}"
-                            self.user_scroll_balance(three_results[0][1])
-                            if password == "12345678":
-                                self.dialog_settings_accounts()
-                        elif len(login) == 6:
-                            toast("Вы вошли")
-                            self.root.ids.name_teacher_screen.text = f"{name[0]} {name[1]} {name[2]}"
-                            self.root.ids.birthday_teacher_screen.text = f"{birthday}"
-                            self.root.ids.id_teacher_screen.text = f"ID: {three_results[0][1]}"
-                            self.root.ids.screen_manager.current = "teacher_screen"
-                        elif len(login) == 7:
-                            toast("Вы вошли")
-                            self.root.ids.screen_manager.current = "admin_screen"
-
-            finally:
-                cursor.close()
-                db.close()
+            toast("Введены не верные данные")
+            
 
     def screen(self, screen_name):
         self.root.ids.screen_manager.current = screen_name
