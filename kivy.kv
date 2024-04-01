@@ -1,4 +1,4 @@
-<TooltipIcon@MDFloatingActionButton+MDTooltip>
+<TooltipIcon@MDFloatingActionButton>
 <Scr@MDScreen>
     FitImage:
         source: 'scr/4882066.jpg'
@@ -163,13 +163,13 @@ Screen:
                     MDTabs:
                         id: tabs
                         Tab:
-                            title: "          История         "
+                            title: "История"
                             ScrollView:
                                 MDList:
                                     id: scroll_history
 
                         Tab:
-                            title: "         Магазин         "
+                            title: "Магазин"
                             MDScrollView:
                                 GridLayout:
                                     spacing: 3
@@ -184,12 +184,14 @@ Screen:
                                         MDFloatLayout:
                                             MDIconButton:
                                                 icon: "scr/vr-icon.png"
-                                                icon_size: "90sp"
+                                                icon_size: "80sp"
                                                 pos_hint: {"center_x": .5, "center_y": .7}
+
                                             MDFlatButton:
                                                 text: 'Игра в VR шлеме'
                                                 font_size: "14sp"
                                                 pos_hint: {"center_x": .5, "center_y": .4}
+
                                             MDFlatButton:
                                                 text: "20"
                                                 font_size: "23sp"
@@ -206,7 +208,7 @@ Screen:
                                         MDFloatLayout:
                                             MDIconButton:
                                                 icon: "scr/cap.png"
-                                                icon_size: "90sp"
+                                                icon_size: "80sp"
                                                 pos_hint: {"center_x": .5, "center_y": .7}
                                             MDFlatButton:
                                                 text: 'Бейсболка'
@@ -228,7 +230,7 @@ Screen:
                                         MDFloatLayout:
                                             MDIconButton:
                                                 icon: "scr/mug.png"
-                                                icon_size: "90sp"
+                                                icon_size: "80sp"
                                                 pos_hint: {"center_x": .5, "center_y": .7}
                                             MDFlatButton:
                                                 text: 'Кружка'
@@ -250,7 +252,7 @@ Screen:
                                         MDFloatLayout:
                                             MDIconButton:
                                                 icon: "scr/shopper.png"
-                                                icon_size: "90sp"
+                                                icon_size: "80sp"
                                                 pos_hint: {"center_x": .5, "center_y": .7}
                                             MDFlatButton:
                                                 text: 'Шопер'
@@ -290,13 +292,13 @@ Screen:
                                         elevation: 6
                                         orientation: "vertical"
                         Tab:
-                            title: "         Начисление      "
+                            title: " Начисление "
                             MDTabs:
                                 Tab:
-                                    title: "                  Конкурсы                       "
+                                    title: " Конкурсы "
                                     id: charge_contests
                                 Tab:
-                                    title: "                  Другое                       "
+                                    title: " Другое "
                                     ScrollView:
                                         MDList:
                                             OneLineAvatarListItem:
@@ -390,7 +392,7 @@ Screen:
                             font_style: "Button"
                             size_hint_y: None
                             halign: "center"
-                            font_size: "30sp"
+                            font_size: "25sp"
                             pos_hint: {"center_x": .5, "center_y": .74}
                         MDLabel:
                             text: "02.10.2009"
@@ -424,51 +426,52 @@ Screen:
                     MDLabel:
                         text: "Заполините данные\nнового преподавателя"
                         pos_hint: {"center_x": .5, "center_y": .9}
-                        font_size: '45sp'
+                        font_size: '25sp'
+                        size_hint: .6,.1
                         halign: 'center'
                     MDTextField:
                         id: login_admin_new
                         mode: "rectangle"
-                        size_hint: .85, .07
+                        size_hint: .85, .08
                         width: "400dp"
                         hint_text: "Логин"
-                        pos_hint: {"center_x": .5, "center_y": .75}
+                        pos_hint: {"center_x": .5, "center_y": .76}
                     MDIconButton:
                         icon: "scr/repeat.png"
                         on_release: app.generate()
-                        pos_hint: {"center_x": .88, "center_y": .75}
+                        pos_hint: {"center_x": .88, "center_y": .76}
                     MDTextField:
                         id: password_admin_new
                         mode: "rectangle"
-                        size_hint: .85, .07
+                        size_hint: .85, .08
                         width: "400dp"
                         hint_text: "Пароль"
-                        pos_hint: {"center_x": .5, "center_y": .65}
+                        pos_hint: {"center_x": .5, "center_y": .66}
                     MDTextField:
                         id: name_admin_new
                         mode: "rectangle"
-                        size_hint: .85, .07
+                        size_hint: .85, .08
                         width: "400dp"
                         hint_text: "ФИО"
-                        pos_hint: {"center_x": .5, "center_y": .55}
+                        pos_hint: {"center_x": .5, "center_y": .56}
                     MDTextField:
                         id: birthday_admin_new
                         mode: "rectangle"
-                        size_hint: .85, .07
+                        size_hint: .85, .08
                         width: "400dp"
                         hint_text: "День рождение"
-                        pos_hint: {"center_x": .5, "center_y": .45}
+                        pos_hint: {"center_x": .5, "center_y": .46}
                     MDTextField:
                         id: email_new_admin
                         mode: "rectangle"
-                        size_hint: .85, .07
+                        size_hint: .85, .08
                         width: "400dp"
                         hint_text: "Почта"
-                        pos_hint: {"center_x": .5, "center_y": .35}
+                        pos_hint: {"center_x": .5, "center_y": .36}
                     MDRaisedButton:
                         text: "Создать"
                         text_size: "39sp"
-                        pos_hint: {"center_x": .5, "center_y": .15}
+                        pos_hint: {"center_x": .5, "center_y": .16}
                         on_release:
                             app.registration("Admin_screen")
             Scr:
@@ -486,7 +489,7 @@ Screen:
                             id: name_teacher_screen
                             pos_hint: {"center_x": .8, "center_y": .75}
                             text: "Михайлов Сергей Генадьевич"
-                            font_size: '25sp'
+                            font_size: '20sp'
                         MDLabel:
                             id: birthday_teacher_screen
                             text: '29.04.1980'
@@ -526,13 +529,13 @@ Screen:
                             MDTextField:
                                 id: search_students
                                 mode: "round"
-                                size_hint: .75, .40
+                                size_hint: .75, 1
                                 pos_hint: {"center_x": .5, "center_y": .5}
-                                hint_text: 'Поиск по ФИО, Дата рождения, ID'
+                                hint_text: 'Поиск по ФИО'
                                 on_text: app.search_students(self.text, True)
                             MDIconButton:
                                 icon: 'magnify'
-                                pos_hint: {"center_x": .85, "center_y": .5}
+                                pos_hint: {"center_x": .8, "center_y": .5}
                         MDScrollView:
                             MDList:
                                 id: container
@@ -551,6 +554,7 @@ Screen:
                             orientation: "vertical"
                             MDLabel:
                                 id: text_hint_create
+                                font_size: '15sp'
                                 pos_hint: {"center_x": .54, "center_y": .5}
 
                         MDRaisedButton:
