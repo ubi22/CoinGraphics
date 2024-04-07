@@ -1,74 +1,41 @@
-import requests
 from kivymd.uix.tab import MDTabsBase
 from kivymd.uix.floatlayout import MDFloatLayout
 from kivy.core.window import Window
-from send_gmail import send_em, send_admim
-from kivymd.uix.list import OneLineAvatarIconListItem, IconLeftWidget
-from kivymd.uix.list import ThreeLineIconListItem
-from kivy.animation import Animation
-from datetime import datetime
+from search import search
+from kivymd.uix.list import IconLeftWidget
 from balance import balance_def
 import random
-import kvant_py
+import kvant_lib
 from kivymd.uix.button import MDRaisedButton
 from kivy.lang import Builder
 from kivymd.uix.filemanager import MDFileManager
 from kivy.properties import ObjectProperty
 from kivymd.uix.textfield import MDTextField
-from kivymd.uix.list import ThreeLineIconListItem
-from kivy.metrics import dp
-from kivymd.app import MDApp
 from kivymd.uix.datatables import MDDataTable
-from kivy.uix.anchorlayout import AnchorLayout
-import sqlite3
 from kivy.metrics import dp
-from kivymd.uix.list import IconRightWidget
-from kivymd.uix.label import MDLabel
-from kivymd.uix.button import MDIconButton
-from kivymd.uix.card import MDCard
 from kivy.properties import StringProperty
 from kivymd.uix.button import MDFlatButton
 from kivymd.uix.dialog import MDDialog
-from kivymd.icon_definitions import md_icons
 from kivymd.app import MDApp
 from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.uix.list import ThreeLineIconListItem
-from kivymd.uix.list import IRightBodyTouch, OneLineAvatarIconListItem
-from kivymd.uix.menu import MDDropdownMenu
+from kivymd.uix.list import OneLineAvatarIconListItem
 from kivymd.toast import toast
 from kivy.uix.boxlayout import BoxLayout
 import hashlib
 import random
-import os
+import os, json, pandas, requests
+from url import url
 Window.size = (520, 900)
+
+
+def get_account(login):
+    result = json.loads(requests.get(f"{url}/get_account/{login}").text)
+    return result
 
 
 def md5sum(value):
     return hashlib.md5(value.encode()).hexdigest()
-
-
-with sqlite3.connect('userbase.db') as db:
-    cursor = db.cursor()
-    query = """
-    CREATE TABLE IF NOT EXISTS users(
-        id INTEGER PRIMARY KEY,
-        id_user TEXT,
-        password TEXT,
-        name TEXT,
-        birthday TEXT
-    )
-    """
-    cursor.executescript(query)
-    query = """
-    CREATE TABLE IF NOT EXISTS history(
-        id_user TEXT,
-        sum INTEGER,
-        for_what TEXT,
-        time TEXT
-    )
-    """
-
-    cursor.executescript(query)
 
 
 class Content(BoxLayout):
@@ -126,48 +93,51 @@ class MoneyTest(MDApp):
         self.elevation = 0
 
     def manager_file_exel_open(self):
+        PATH = "."
+        if platform == "android":
+            from android.permissions import request_permissions, Permission
+            request_permissions([Permission.READ_EXTERNAL_STORAGE, Permission.WRITE_EXTERNAL_STORAGE])
+            app_folder = os.path.dirname(os.path.abspath(__file__))
+            PATH = "/storage/emulated/0"  # app_folder
+        self.file_manager.show(PATH)  # output manager to the screen
         self.manager_open = True
-        self.file_manager.show(os.path.expanduser("/"))
+
+    def generate(self):
+        while True:
+            value = random.randint(10_000, 99_999)
+            if not get_account(value):
+                self.root.ids.login_admin_new.text = str(value+300_000)
+                return value
 
     def select_path(self, path):
         self.exit_manager()
         self.root.ids.generate_table.clear_widgets()
         self.path = path
         try:
-            df = pd.read_excel(f'{path}')
-            df['Дата рождения'] = pd.to_datetime(df['Дата рождения']).dt.strftime('%d %m %Y')
+            df = pandas.read_excel(f'{path}')
+            df['Дата рождения'] = pandas.to_datetime(df['Дата рождения']).dt.strftime('%d %m %Y')
             birthday = df['Дата рождения']
             name = df['ФИО']
             name_parents = df["Родители"]
             phone = df['Контакты']
             email = df['Почта']
-            with sqlite3.connect('userbase.db') as db:
-                cursor = db.cursor()
+            generates = self.generate()
+            data = []
+            for i in range(len(birthday)):
+                birthday_enter = birthday[i].replace(" ", ".")
+                password = "12345678"
+                check = json.loads(requests.get(f"{url}/does_exist_pair?name={name[i]}&birthdate={birthday_enter}").text)
+                print(check)
+                if check is not None:
+                    account = get_account(check)
+                    generates = check
+                    password = "Уже есть"
+                else:
+                    generates = self.generate()
 
-                def generate():
-                    while True:
-                        generate = random.randint(10000, 100000)
-                        cursor.execute("SELECT id_user FROM users WHERE id_user = ?", [generate])
-                        if cursor.fetchone() is None:
-                            break
-                    return generate
-
-                data = []
-                for i in range(len(birthday)):
-                    birthday_enter = birthday[i].replace(" ", ".")
-                    # print(f"Дата рождения: {birthday_enter}, ФИО: {name[i]}")
-                    cursor.execute(f'''SELECT * FROM users WHERE name LIKE '%{name[i]}%';''')
-                    three_results = cursor.fetchall()
-                    if len(three_results) > 0:
-                        generates = three_results[0][1]
-                        data.append(
-                            [f"{generates}", f"{name[i]}", f'{birthday_enter}', "Уже есть", f"{name_parents[i]}",
-                             f"{phone[i]}", f"{email[i]}"])
-                    else:
-                        generates = generate()
-                        data.append(
-                            [f"{generates}", f"{name[i]}", f'{birthday_enter}', '12345678', f"{name_parents[i]}",
-                             f"{phone[i]}", f"{email[i]}"])
+                data.append(
+                        [f"{generates}", f"{name[i]}", f'{birthday_enter}', f"{password}", f"{name_parents[i]}",
+                            f"{phone[i]}", f"{email[i]}"])    
                 print(len(data))
             self.charge_contests = MDDataTable(
                 size_hint=(0.9, 1),
@@ -209,7 +179,7 @@ class MoneyTest(MDApp):
             enter_list.append(["Дата рождение", birthday_list])
             enter_list.append(["Пароль", password_list])
             enter_list = dict(enter_list)
-            df = pd.DataFrame(enter_list)
+            df = pandas.DataFrame(enter_list)
             df.to_excel('./list_user.xlsx')
             self.root.ids.generate_table.add_widget(self.charge_contests)
             toast(f"{path}")
@@ -222,24 +192,20 @@ class MoneyTest(MDApp):
 
                 )
             self.root.ids.boxlayout.add_widget(self.fg)
-
-        except(KeyError):
+            print("Конец")
+        except KeyError:
             toast("Неправильные столбцы")
 
     def create_users_sql(self):
-        with sqlite3.connect('userbase.db') as db:
-            cursor = db.cursor()
-            db.create_function("md5", 1, md5sum)
-            for i in range(len(self.charge_contests.row_data)):
-                cursor.execute("SELECT id_user FROM users WHERE id_user = ?", [self.charge_contests.row_data[i][0]])
-                three_result = cursor.fetchall()
-                if len(three_result) == 1:
-                    toast("Aккаунт создан")
-                else:
-                    values = [self.charge_contests.row_data[i][0], self.charge_contests.row_data[i][3], self.charge_contests.row_data[i][1], self.charge_contests.row_data[i][2]]
-                    cursor.execute("INSERT INTO users(id_user, password, name, birthday, name) VALUES(?,md5(?),?,?)", values)
-                    toast(f"Создана запись c ID {self.charge_contests.row_data[i][0]}")
-                self.dialog_email_send()
+        for i in range(len(self.charge_contests.row_data)):
+            if self.charge_contests.row_data[i][3] == "Уже есть":
+                toast("Aккаунт создан")
+            else:
+                values = [self.charge_contests.row_data[i][0], self.charge_contests.row_data[i][3], self.charge_contests.row_data[i][1], self.charge_contests.row_data[i][2]]
+                json = kvant_lib.create_user(self.charge_contests.row_data[i][0], self.charge_contests.row_data[i][1], self.charge_contests.row_data[i][2], "12345678", self.root.ids.login.text,
+                                             self.root.ids.password.text)
+                requests.post(url=f"{url}/execute", data=json.encode("utf-8"))
+            self.dialog_email_send()
 
     def exit_manager(self, *args):
         self.manager_open = False
@@ -308,26 +274,28 @@ class MoneyTest(MDApp):
         if len(self.dialog_for_send.content_cls.ids.email_for_send.text) == 0:
             toast("Введите почту")
         else:
-            send_em(res_mail=f"{self.dialog_for_send.content_cls.ids.email_for_send.text}")
+            with open("./list_user.xlsx", "rb") as f:
+                a = f.read()
+                json = kvant_lib.send_mail(self.dialog_for_send.content_cls.ids.email_for_send.text, a, self.root.ids.login.text, self.root.ids.password.text)
+                requests.post(url=f"{url}/execute", data=json.encode("utf-8"))
             self.screen("teacher_screen")
             self.dialog_close("dialog_for_send")
 
-    def search_students(self, text="", search=False):
-        if len(text) >= 2:
-            with sqlite3.connect('userbase.db') as db:
-                cursor = db.cursor()
-                cursor.execute(f'''SELECT * FROM users WHERE name LIKE '%{text.title()}%';''')
-                three_results = cursor.fetchall()
-                self.root.ids.container.clear_widgets()
-                for i in range(len(three_results)):
-                    self.root.ids.container.add_widget(
-                        ThreeLineIconListItem(
-                            text=f'{three_results[i][3]}',
-                            secondary_text=f"{three_results[i][4]}",
-                            tertiary_text=f"ID: {three_results[i][1]}",
-                            on_release=lambda x: self.dialog_windows(x)
-                        ),
-                    )
+    def search_students(self, text=""):
+        self.root.ids.container.clear_widgets()
+        if len(text) >= 4:
+            LIST = search(json.loads(requests.get(f"{url}/get_account_skeleton_list").text), text)
+            # FAST
+            for i in LIST:
+                puple = get_account(i)       
+                self.root.ids.container.add_widget(
+                    ThreeLineIconListItem(
+                        text=puple['name'],
+                        secondary_text=puple['birthdate'],
+                        tertiary_text=f"ID: {puple['id']}",
+                        on_release=lambda x: self.dialog_windows(x)
+                    ),
+                )
 
     def dialog_windows(self, task_windows):
         print(task_windows.text, task_windows.secondary_text)
@@ -344,6 +312,7 @@ class MoneyTest(MDApp):
                 type="simple",
                 radius=[20, 7, 20, 7],
                 items=[
+                    Item(text="Удалить", on_release=lambda x=task_windows.text: self.dialog_windows_task(x)),
                     Item(text="Сбросить пароль", on_release=lambda x=task_windows.text: self.dialog_windows_task(x)),
                     Item(text="Начислить", on_release=lambda x=task_windows.text: self.dialog_windows_task(x)),
                     Item(text="Списание", on_release=lambda x=task_windows.text: self.dialog_windows_task(x)),
@@ -448,21 +417,18 @@ class MoneyTest(MDApp):
         self.dialog_confirmation.open()
 
     def clear_account(self):
-        with sqlite3.connect('userbase.db') as db:
-            cursor = db.cursor()
-            if self.dialog_confirmation.text == "Все данные о пользователе будут стерты без возратно":
-                id = self.id.replace("ID: ", "")
-                cursor.execute(f"DELETE FROM users WHERE id_user = '{id}';")
-                toast("Аккаунт удален")
-                self.dialog_close("dialog_confirmation")
-                self.dialog_close("dialog_list")
-            else:
-                db.create_function("md5", 1, md5sum)
-                id = self.id.replace("ID: ", "")
-                cursor.execute(f"UPDATE users SET password = md5('12345678') WHERE id_user = {id}")
-                self.dialog_close("dialog_confirmation")
-                self.dialog_close("dialog_list")
-                self.root.ids.container.clear_widgets()
+        id = self.id.replace("ID: ", "")
+        if self.dialog_confirmation.text == "Все данные о пользователе будут стерты без возратно":
+            json = kvant_lib.delete_user(id, self.root.ids.login.text, self.root.ids.password.text)
+            requests.post(url=f"{url}/execute", data=json.encode("utf-8"))
+            toast("Аккаунт удален")
+        else:
+            json = kvant_lib.change_password(id, "12345678",self.root.ids.login.text, self.root.ids.password.text)
+            requests.post(url=f"{url}/execute", data=json.encode("utf-8"))
+            toast("Пароль сброшен")
+        self.dialog_close("dialog_confirmation")
+        self.dialog_close("dialog_list")
+        self.root.ids.container.clear_widgets()
 
     def dialog_windows_task(self, task):
         task = task.text
@@ -494,40 +460,32 @@ class MoneyTest(MDApp):
         self.theme_cls.primary_palette = "Indigo"
         return Builder.load_file("kivy.kv")
 
-    def generate(self):
-        with sqlite3.connect('userbase.db') as db:
-            cursor = db.cursor()
-            while True:
-                generate = random.randint(100000, 1000000)
-                print(generate)
-                cursor.execute("SELECT id_user FROM users WHERE id_user = ?", [generate])
-                if cursor.fetchone() is None:
-                    self.root.ids.login_admin_new.text = f"{generate}"
-                    break
-
     def settings_balance(self, confirm):
-        with sqlite3.connect('userbase.db') as db:
-            cursor = db.cursor()
-            sum = int(self.dialog_change.content_cls.ids.first_field.text)
-            balance = balance_def(self.id)
-            date = datetime.now().strftime('%d %m %Y').replace(" ", ".")
-            current_date = f"{date}  {time.strftime('%H:%M', t)}"
-            print(current_date)
-            if confirm == "Списание":
-                if balance < sum:
-                    toast("Недостаточно средст")
-                else:
-                    values = [self.id, -sum,
-                              self.dialog_change.content_cls.ids.secondary_field.text, current_date]
-                    cursor.execute("INSERT INTO history(id_user, sum, for_what, time) VALUES(?,?,?,?)", values)
-                    toast("Списано")
-                    self.dialog_close("dialog_change")
-            elif confirm == "Начислить":
-                values = [self.id, sum,
-                          self.dialog_change.content_cls.ids.secondary_field.text, current_date]
-                cursor.execute("INSERT INTO history(id_user, sum, for_what, time) VALUES(?,?,?,?)", values)
-                toast("Начислино")
+        sum = int(self.dialog_change.content_cls.ids.first_field.text)
+        balance = balance_def(self.id)
+        print(self.id)
+        id = self.id.replace("ID: ", "")
+        if confirm == "Списание":
+            if balance < sum:
+                toast("Недостаточно средст")
+            else:
+                json = kvant_lib.change_balance(-sum, id, self.dialog_change.content_cls.ids.secondary_field.text, self.root.ids.login.text, self.root.ids.password.text)
+                requests.post(url=f"{url}/execute", data=json.encode("utf-8"))
+                toast("Списано")
                 self.dialog_close("dialog_change")
+        elif confirm == "Начислить":
+            json = kvant_lib.change_balance(sum, id, self.dialog_change.content_cls.ids.secondary_field.text, self.root.ids.login.text, self.root.ids.password.text)
+            requests.post(url=f"{url}/execute", data=json.encode("utf-8"))
+            toast("Начислино")
+            self.dialog_close("dialog_change")
+
+    def update(self):
+        login = self.root.ids.login.text
+        account = get_account(login)
+        history = list(account["history"])
+
+        self.root.ids.balance_user.text = f"{balance_def(login)}"
+        print(history[0]['id_user'])
 
     def registration(self):
             login = self.root.ids.login_admin_new.text
@@ -535,14 +493,23 @@ class MoneyTest(MDApp):
             name = self.root.ids.name_admin_new.text
             birthday = self.root.ids.birthday_admin_new.text
             email = self.root.ids.email_new_admin.text
-            toast("Создали аккаунт")
-            if requests.get(f"http://127.0.0.1:8000/does_exist/{login}").text == "true":
+
+            for i in (login, password, name, birthday, email):
+                if not len(i):
+                    toast("Вы заполнили не все поля")
+
+                    return
+            
+            if get_account(login):
                 toast("Такой логин есть")
             else:
-                json = kvant_py.create_user(f"{login}", f"{name}", f"{birthday}", f"{password}", f"{self.id}", f"{self.password}")
-                requests.post(url="http://127.0.0.1:8000/execute", data=json.encode("utf-8"))
+                print("My login is:")
+                print(self.root.ids.login.text)
+                json = kvant_lib.create_user(login, name, birthday, password, self.root.ids.login.text, self.root.ids.password.text)
+                requests.post(url=f"{url}/execute", data=json.encode("utf-8"))
 
                 self.screen("login_screen")
+                toast("Создали аккаунт")
 
     def dialog_settings_accounts(self):
         if not self.dialog_settings_account:
@@ -585,36 +552,52 @@ class MoneyTest(MDApp):
                 ))
 
     def settings_password(self):
-        with sqlite3.connect('userbase.db') as db:
-            cursor = db.cursor()
-            db.create_function("md5", 1, md5sum)
-            cursor.execute(f"UPDATE users SET password = md5('{self.dialog_settings_account.content_cls.ids.password_input.text}') WHERE id_user = {self.root.ids.login.text}")
-            self.dialog_close("dialog_settings_account")
+        # cursor.execute(f"UPDATE users SET password = md5('{self.dialog_settings_account.content_cls.ids.password_input.text}') WHERE id_user = {self.root.ids.login.text}")
+        self.dialog_close("dialog_settings_account")
 
     def log_in(self):
         login = self.root.ids.login.text
         password = self.root.ids.password.text
-        check = requests.get(f"http://127.0.0.1:8000/check_login_credentials?login={login}&password={password}").text
-        if check == "true":
-            if len(login) == 5:
-                toast("Вы вошли")
+        check = json.loads(requests.get(f"{url}/check_login_credentials?login={login}&password={hashlib.sha256(password.encode()).hexdigest()}").text)
+
+        if check:
+            account = get_account(login)
+            id_ = account["id"]
+            fullname = account["name"]
+            balance = account["balance"]
+            history = account["history"]
+            birthdate = account["birthdate"]
+            
+            name = dict(enumerate(fullname.split(" "))).get(1) or fullname
+            family = dict(enumerate(fullname.split(" "))).get(0) or fullname
+            dad = dict(enumerate(fullname.split(" "))).get(2) or fullname
+            toast("Вы вошли")
+
+            if len(login) == 5: 
                 self.id = login
                 self.password = password
-                self.root.ids.screen_manager.current = "settingsadmin"
+                self.root.ids.screen_manager.current = "main_screen"
+                print(history)
+                self.root.ids.balance_user.text = f"{balance} Kvant"
+                self.root.ids.name_profile_main.text = f"{family} {name} \n{dad}"
+                self.root.ids.name_main_screen.text = f"{name} >"
                 if password == "12345678":
                     self.dialog_settings_accounts()
             elif len(login) == 6:
-                toast("Вы вошли")
                 self.root.ids.screen_manager.current = "teacher_screen"
+                self.root.ids.name_teacher_screen.text = name
+                self.root.ids.id_teacher_screen.text = id_
+                self.root.ids.birthday_teacher_screen.text = birthdate
+                
             elif len(login) == 7:
-                toast("Вы вошли")
                 self.root.ids.screen_manager.current = "admin_screen"
+                self.root.ids.admin_name.text = account["name"]
         else:
             toast("Введены не верные данные")
-            
 
     def screen(self, screen_name):
         self.root.ids.screen_manager.current = screen_name
 
 
-MoneyTest().run()
+if __name__ == "__main__":
+    MoneyTest().run()
