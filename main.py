@@ -23,6 +23,7 @@ from kivymd.uix.list import OneLineAvatarIconListItem
 from kivymd.toast import toast
 from kivy.uix.boxlayout import BoxLayout
 import hashlib
+import platform
 import random
 import os, json, pandas, requests
 from url import url
@@ -93,12 +94,7 @@ class MoneyTest(MDApp):
         self.elevation = 0
 
     def manager_file_exel_open(self):
-        PATH = "."
-        if platform == "android":
-            from android.permissions import request_permissions, Permission
-            request_permissions([Permission.READ_EXTERNAL_STORAGE, Permission.WRITE_EXTERNAL_STORAGE])
-            app_folder = os.path.dirname(os.path.abspath(__file__))
-            PATH = "/storage/emulated/0"  # app_folder
+        PATH = "/"
         self.file_manager.show(PATH)  # output manager to the screen
         self.manager_open = True
 
@@ -398,7 +394,7 @@ class MoneyTest(MDApp):
         if not self.dialog_confirmation:
             self.dialog_confirmation = MDDialog(
                 title=f"Вы точно хотите удалить: \n{self.name}",
-                text="Все данные о пользователе будут стерты без возратно",
+                text="Все данные о пользователе будут стерты безвозратно",
                 buttons=[
                     MDFlatButton(
                         text="Отмена",
@@ -418,7 +414,7 @@ class MoneyTest(MDApp):
 
     def clear_account(self):
         id = self.id.replace("ID: ", "")
-        if self.dialog_confirmation.text == "Все данные о пользователе будут стерты без возратно":
+        if self.dialog_confirmation.text == "Все данные о пользователе будут стерты безвозратно":
             json = kvant_lib.delete_user(id, self.root.ids.login.text, self.root.ids.password.text)
             requests.post(url=f"{url}/execute", data=json.encode("utf-8"))
             toast("Аккаунт удален")
@@ -438,7 +434,7 @@ class MoneyTest(MDApp):
             self.dialog_confirmation.title = f"Вы точно хотите сбросить пароль: \n{self.name}?"
         elif task == "Удалить":
             self.dialog_windows_confirmation()
-            self.dialog_confirmation.text = f"Все данные о пользователе будут стерты без возратно"
+            self.dialog_confirmation.text = f"Все данные о пользователе будут стерты безвозратно"
             self.dialog_confirmation.title = f"Вы точно хотите удалить: \n{self.name}?"
         elif task == "Начислить":
             self.dialog_windows_change(task)
@@ -482,10 +478,21 @@ class MoneyTest(MDApp):
     def update(self):
         login = self.root.ids.login.text
         account = get_account(login)
-        history = list(account["history"])
+        history = account["history"]
+        self.root.ids.scroll_history.clear_widgets()
+        for i in reversed(history):
+            self.root.ids.scroll_history.add_widget(
+                ThreeLineIconListItem(
+                    IconLeftWidget(
+                        icon="history"
+                    ),
+                    text=str(i['sum']),
+                    secondary_text=f"{i['for_what']}",
+                    tertiary_text=str(i['time'])
+                ))
 
-        self.root.ids.balance_user.text = f"{balance_def(login)}"
-        print(history[0]['id_user'])
+
+        self.root.ids.balance_user.text = f"{balance_def(login)} Kvant"
 
     def registration(self):
             login = self.root.ids.login_admin_new.text
@@ -536,23 +543,10 @@ class MoneyTest(MDApp):
         self.dialog_settings_account.open()
 
     def user_scroll_balance(self, ids):
-        with sqlite3.connect("userbase.db") as db:
-            cursor = db.cursor()
-            cursor.execute(f'''SELECT * FROM history WHERE id_user LIKE '%ID: {ids}%';''')
-            result = cursor.fetchall()
-            for i in range(len(result)):
-                self.root.ids.scroll_history.add_widget(
-                    ThreeLineIconListItem(
-                        IconLeftWidget(
-                            icon="history"
-                        ),
-                        text=f"{result[i][1]}",
-                        secondary_text=f"{result[i][2]}",
-                        tertiary_text=f"{result[i][3]}"
-                ))
+        pass
 
     def settings_password(self):
-        # cursor.execute(f"UPDATE users SET password = md5('{self.dialog_settings_account.content_cls.ids.password_input.text}') WHERE id_user = {self.root.ids.login.text}")
+        requests.get(f"{url}/passwd?login={self.root.ids.login.text}&new_password={hashlib.sha256(self.dialog_settings_account.content_cls.ids.password_input.text.encode()).hexdigest()}")
         self.dialog_close("dialog_settings_account")
 
     def log_in(self):
@@ -581,19 +575,18 @@ class MoneyTest(MDApp):
                 self.root.ids.balance_user.text = f"{balance} Kvant"
                 self.root.ids.name_profile_main.text = f"{family} {name} \n{dad}"
                 self.root.ids.name_main_screen.text = f"{name} >"
-                if password == "12345678":
-                    self.dialog_settings_accounts()
             elif len(login) == 6:
                 self.root.ids.screen_manager.current = "teacher_screen"
                 self.root.ids.name_teacher_screen.text = name
                 self.root.ids.id_teacher_screen.text = id_
                 self.root.ids.birthday_teacher_screen.text = birthdate
-                
             elif len(login) == 7:
                 self.root.ids.screen_manager.current = "admin_screen"
                 self.root.ids.admin_name.text = account["name"]
+            if password == "12345678":
+                self.dialog_settings_accounts()
         else:
-            toast("Введены не верные данные")
+            toast("Введены неверные данные")
 
     def screen(self, screen_name):
         self.root.ids.screen_manager.current = screen_name
