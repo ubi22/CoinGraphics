@@ -82,21 +82,8 @@ class MoneyTest(MDApp):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        Window.bind(on_keyboard=self.events)
-        self.manager_open = False
-        self.file_manager = MDFileManager(
-            exit_manager=self.exit_manager,
-            select_path=self.select_path,
-            preview=True
-        )
-        self.file_manager.ext = [".xlsx"]
         self.fg = None
         self.elevation = 0
-
-    def manager_file_exel_open(self):
-        PATH = "/"
-        self.file_manager.show(PATH)  # output manager to the screen
-        self.manager_open = True
 
     def generate(self):
         while True:
@@ -104,114 +91,6 @@ class MoneyTest(MDApp):
             if not get_account(value):
                 self.root.ids.login_admin_new.text = str(value+300_000)
                 return value
-
-    def select_path(self, path):
-        self.exit_manager()
-        self.root.ids.generate_table.clear_widgets()
-        self.path = path
-        try:
-            df = pandas.read_excel(f'{path}')
-            df['Дата рождения'] = pandas.to_datetime(df['Дата рождения']).dt.strftime('%d %m %Y')
-            birthday = df['Дата рождения']
-            name = df['ФИО']
-            name_parents = df["Родители"]
-            phone = df['Контакты']
-            email = df['Почта']
-            generates = self.generate()
-            data = []
-            for i in range(len(birthday)):
-                birthday_enter = birthday[i].replace(" ", ".")
-                password = "12345678"
-                check = json.loads(requests.get(f"{url}/does_exist_pair?name={name[i]}&birthdate={birthday_enter}").text)
-                print(check)
-                if check is not None:
-                    account = get_account(check)
-                    generates = check
-                    password = "Уже есть"
-                else:
-                    generates = self.generate()
-
-                data.append(
-                        [f"{generates}", f"{name[i]}", f'{birthday_enter}', f"{password}", f"{name_parents[i]}",
-                            f"{phone[i]}", f"{email[i]}"])    
-                print(len(data))
-            self.charge_contests = MDDataTable(
-                size_hint=(0.9, 1),
-                rows_num=len(data),
-                column_data=[
-                    ("ID", dp(10)),
-                    ("ФИО", dp(52)),
-                    ("Дата рождения", dp(19)),
-                    ("Пароль", dp(19.2)),
-                    ("Родители", dp(52)),
-                    ("Контакты", dp(25)),
-                    ("Почта", dp(45)),
-                ],
-                row_data=[
-                    [
-                        f"{data[i][0]}",
-                        f"{data[i][1]}",
-                        f"{data[i][2]}",
-                        f"{data[i][3]}",
-                        f"{data[i][4]}",
-                        f"{data[i][5]}",
-                        f"{data[i][6]}",
-                    ] for i in range(len(data))
-                ],
-            )
-
-            birthday_list = []
-            id_list = []
-            name_list = []
-            enter_list = []
-            password_list = []
-            for i in  range(len(data)):
-                id_list.append(data[i][0])
-                name_list.append(data[i][1])
-                birthday_list.append(data[i][2])
-                password_list.append(data[i][3])
-            enter_list.append(["ID", id_list])
-            enter_list.append(["ФИО", name_list])
-            enter_list.append(["Дата рождение", birthday_list])
-            enter_list.append(["Пароль", password_list])
-            enter_list = dict(enter_list)
-            df = pandas.DataFrame(enter_list)
-            df.to_excel('./list_user.xlsx')
-            self.root.ids.generate_table.add_widget(self.charge_contests)
-            toast(f"{path}")
-            self.root.ids.boxlayout_download.pos_hint = ({"center_x": .3, "center_y": .1})
-            self.fg = MDRaisedButton(
-                    id="rr",
-                    text='Создать пользователей',
-                    pos_hint=({"center_x": .7, "center_y": .1}),
-                    on_release=lambda x: self.create_users_sql()
-
-                )
-            self.root.ids.boxlayout.add_widget(self.fg)
-            print("Конец")
-        except KeyError:
-            toast("Неправильные столбцы")
-
-    def create_users_sql(self):
-        for i in range(len(self.charge_contests.row_data)):
-            if self.charge_contests.row_data[i][3] == "Уже есть":
-                toast("Aккаунт создан")
-            else:
-                values = [self.charge_contests.row_data[i][0], self.charge_contests.row_data[i][3], self.charge_contests.row_data[i][1], self.charge_contests.row_data[i][2]]
-                json = kvant_lib.create_user(self.charge_contests.row_data[i][0], self.charge_contests.row_data[i][1], self.charge_contests.row_data[i][2], "12345678", self.root.ids.login.text,
-                                             self.root.ids.password.text)
-                requests.post(url=f"{url}/execute", data=json.encode("utf-8"))
-            self.dialog_email_send()
-
-    def exit_manager(self, *args):
-        self.manager_open = False
-        self.file_manager.close()
-
-    def events(self, instance, keyboard, keycode, text, modifiers):
-        if keyboard in (1001, 27):
-            if self.manager_open:
-                self.file_manager.back()
-        return True
 
     def notification(self):
         self.root.ids.notification_bell.icon = 'bell-ring'
@@ -265,17 +144,6 @@ class MoneyTest(MDApp):
         )
         self.root.ids.charge_contests.add_widget(charge_contests)
 
-    def send_mail(self):
-        if len(self.dialog_for_send.content_cls.ids.email_for_send.text) == 0:
-            toast("Введите почту")
-        else:
-            with open("./list_user.xlsx", "rb") as f:
-                a = f.read()
-                json = kvant_lib.send_mail(self.dialog_for_send.content_cls.ids.email_for_send.text, a, self.root.ids.login.text, self.root.ids.password.text)
-                requests.post(url=f"{url}/execute", data=json.encode("utf-8"))
-            self.screen("teacher_screen")
-            self.dialog_close("dialog_for_send")
-
     def search_students(self, text=""):
         self.root.ids.container.clear_widgets()
         if len(text) >= 4:
@@ -293,7 +161,6 @@ class MoneyTest(MDApp):
                 )
 
     def dialog_windows(self, task_windows):
-        print(task_windows.text, task_windows.secondary_text)
         self.name = task_windows.text
         self.birthday = task_windows.secondary_text
         self.id = task_windows.tertiary_text
@@ -317,35 +184,7 @@ class MoneyTest(MDApp):
             self.dialog_list.open()
 
     def dialog_close(self, a):
-        print(a)
         eval(f"self.{a}.dismiss()")
-
-    def dialog_email_send(self):
-        if not self.dialog_for_send:
-            self.dialog_for_send = MDDialog(
-                radius=[20, 7, 20, 7],
-                title="Введите почту для отправки копии списков",
-                type="custom",
-                content_cls=MDBoxLayout(
-                    MDTextField(
-                        id="email_for_send",
-                        hint_text="Почта",
-                    ),
-                    orientation="vertical",
-                    spacing="12dp",
-                    size_hint_y=None,
-                    height="60dp",
-                ),
-                buttons=[
-                    MDFlatButton(
-                        text="Отправить",
-                        text_color=self.theme_cls.primary_color,
-                        on_release=lambda x: self.send_mail()
-                    ),
-                ],
-
-            )
-        self.dialog_for_send.open()
 
     def dialog_windows_change(self, task_name):
         self.dialog_close("dialog_list")
@@ -458,7 +297,6 @@ class MoneyTest(MDApp):
     def settings_balance(self, confirm):
         sum = int(self.dialog_change.content_cls.ids.first_field.text)
         balance = balance_def(self.id)
-        print(self.id)
         id = self.id.replace("ID: ", "")
         if confirm == "Списание":
             if balance < sum:
@@ -490,7 +328,6 @@ class MoneyTest(MDApp):
                     tertiary_text=str(i['time'])
                 ))
 
-
         self.root.ids.balance_user.text = f"{balance_def(login)} Kvant"
 
     def registration(self):
@@ -509,8 +346,6 @@ class MoneyTest(MDApp):
             if get_account(login):
                 toast("Такой логин есть")
             else:
-                print("My login is:")
-                print(self.root.ids.login.text)
                 json = kvant_lib.create_user(login, name, birthday, password, self.root.ids.login.text, self.root.ids.password.text)
                 requests.post(url=f"{url}/execute", data=json.encode("utf-8"))
 
@@ -558,19 +393,16 @@ class MoneyTest(MDApp):
             id_ = account["id"]
             fullname = account["name"]
             balance = account["balance"]
-            history = account["history"]
             birthdate = account["birthdate"]
-            
             name = dict(enumerate(fullname.split(" "))).get(1) or fullname
             family = dict(enumerate(fullname.split(" "))).get(0) or fullname
             dad = dict(enumerate(fullname.split(" "))).get(2) or fullname
             toast("Вы вошли")
 
-            if len(login) == 5: 
+            if len(login) == 5:
                 self.id = login
                 self.password = password
                 self.root.ids.screen_manager.current = "main_screen"
-                print(history)
                 self.root.ids.balance_user.text = f"{balance} Kvant"
                 self.root.ids.name_profile_main.text = f"{family} {name} \n{dad}"
                 self.root.ids.name_main_screen.text = f"{name} >"

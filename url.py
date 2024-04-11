@@ -1,1 +1,1 @@
-url = "https://kvantomat24.serveo.net"
+url = "https://roughy-precious-neatly.ngrok-free.app/"
