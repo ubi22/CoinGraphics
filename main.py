@@ -5,6 +5,7 @@ from search import search
 from kivymd.uix.list import IconLeftWidget
 from balance import balance_def
 import random
+import threading
 import kvant_lib
 from kivymd.uix.button import MDRaisedButton
 from kivy.lang import Builder
@@ -219,6 +220,10 @@ class MoneyTest(MDApp):
                 self.file_manager.back()
         return True
 
+    def threandings(self, fun):
+        t2 = threading.Thread(target=fun)
+        t2.start()
+
     def notification(self):
         self.root.ids.notification_bell.icon = 'bell-ring'
 
@@ -286,18 +291,22 @@ class MoneyTest(MDApp):
     def search_students(self, text=""):
         self.root.ids.container.clear_widgets()
         if len(text) >= 4:
-            LIST = search(json.loads(requests.get(f"{url}/get_account_skeleton_list").text), text)
-            # FAST
-            for i in LIST:
-                puple = get_account(i)
-                self.root.ids.container.add_widget(
-                    ThreeLineIconListItem(
-                        text=puple['name'],
-                        secondary_text=puple['birthdate'],
-                        tertiary_text=f"ID: {puple['id']}",
-                        on_release=lambda x: self.dialog_windows(x)
-                    ),
-                )
+            t2 = threading.Thread(target=self.searchs, args=text)
+            t2.start()
+
+    def searchs(self, text):
+        LIST = search(json.loads(requests.get(f"{url}/get_account_skeleton_list").text), text)
+        # FAST
+        for i in LIST:
+            puple = get_account(i)
+            self.root.ids.container.add_widget(
+                ThreeLineIconListItem(
+                    text=puple['name'],
+                    secondary_text=puple['birthdate'],
+                    tertiary_text=f"ID: {puple['id']}",
+                    on_release=lambda x: self.dialog_windows(x)
+                ),
+            )
 
     def dialog_windows(self, task_windows):
         print(task_windows.text, task_windows.secondary_text)
@@ -626,41 +635,41 @@ class MoneyTest(MDApp):
     def log_in(self):
         login = self.root.ids.login.text
         password = self.root.ids.password.text
-        # check = json.loads(requests.get(f"{url}/check_login_credentials?login={login}&password={hashlib.sha256(password.encode()).hexdigest()}").text)
-        #
-        # if check:
-        #     account = get_account(login)
-        #     id_ = account["id"]
-        #     fullname = account["name"]
-        #     balance = account["balance"]
-        #     history = account["history"]
-        #     birthdate = account["birthdate"]
-        #
-        #     name = dict(enumerate(fullname.split(" "))).get(1) or fullname
-        #     family = dict(enumerate(fullname.split(" "))).get(0) or fullname
-        #     dad = dict(enumerate(fullname.split(" "))).get(2) or fullname
-        #     toast("Вы вошли")
+        check = json.loads(requests.get(f"{url}/check_login_credentials?login={login}&password={hashlib.sha256(password.encode()).hexdigest()}").text)
 
-        if len(login) == 5:
-            self.id = login
-            self.password = password
-            self.root.ids.screen_manager.current = "main_screen"
-            # print(history)
-            # self.root.ids.balance_user.text = f"{balance} Kvant"
-            # self.root.ids.name_profile_main.text = f"{family} {name} \n{dad}"
-            # self.root.ids.name_main_screen.text = f"{name} >"
-        elif len(login) == 6:
-            self.root.ids.screen_manager.current = "teacher_screen"
-            # self.root.ids.name_teacher_screen.text = name
-            # self.root.ids.id_teacher_screen.text = id_
-            # self.root.ids.birthday_teacher_screen.text = birthdate
-        elif len(login) == 7:
-            self.root.ids.screen_manager.current = "admin_screen"
-            # self.root.ids.admin_name.text = account["name"]
-        if password == "12345678":
-            self.dialog_settings_accounts()
-    # else:
-    #     toast("Введены неверные данные")
+        if check:
+            account = get_account(login)
+            id_ = account["id"]
+            fullname = account["name"]
+            balance = account["balance"]
+            history = account["history"]
+            birthdate = account["birthdate"]
+
+            name = dict(enumerate(fullname.split(" "))).get(1) or fullname
+            family = dict(enumerate(fullname.split(" "))).get(0) or fullname
+            dad = dict(enumerate(fullname.split(" "))).get(2) or fullname
+            toast("Вы вошли")
+
+            if len(login) == 5:
+                self.id = login
+                self.password = password
+                self.root.ids.screen_manager.current = "main_screen"
+                print(history)
+                self.root.ids.balance_user.text = f"{balance} Kvant"
+                self.root.ids.name_profile_main.text = f"{family} {name} \n{dad}"
+                self.root.ids.name_main_screen.text = f"{name} >"
+            elif len(login) == 6:
+                self.root.ids.screen_manager.current = "teacher_screen"
+                self.root.ids.name_teacher_screen.text = name
+                self.root.ids.id_teacher_screen.text = id_
+                self.root.ids.birthday_teacher_screen.text = birthdate
+            elif len(login) == 7:
+                self.root.ids.screen_manager.current = "admin_screen"
+                self.root.ids.admin_name.text = account["name"]
+            if password == "12345678":
+                self.dialog_settings_accounts()
+        else:
+            toast("Введены неверные данные")
 
     def screen(self, screen_name):
         self.root.ids.screen_manager.current = screen_name
