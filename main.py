@@ -5,6 +5,8 @@ from search import search
 from kivymd.uix.list import IconLeftWidget
 from balance import balance_def
 import random
+import json
+import time
 import threading
 import kvant_lib
 from kivymd.uix.button import MDRaisedButton
@@ -27,7 +29,7 @@ import hashlib
 import platform
 import time
 import random
-import os, json, pandas, requests
+import os, pandas, requests
 from url import url
 Window.size = (520, 900)
 
@@ -75,6 +77,7 @@ class MoneyTest(MDApp):
     dialog_lan = None
     dialog_confirmation = None
     dialog_settings_account = None
+    dialog_confirmation_report = None
     dialog_for_send = None
     name = str
     password = str
@@ -221,10 +224,6 @@ class MoneyTest(MDApp):
                 self.file_manager.back()
         return True
 
-    def threandings(self, fun):
-        t2 = threading.Thread(target=fun)
-        t2.start()
-
     def notification(self):
         self.root.ids.notification_bell.icon = 'bell-ring'
 
@@ -290,24 +289,24 @@ class MoneyTest(MDApp):
             self.dialog_close("dialog_for_send")
 
     def search_students(self, text=""):
-        self.root.ids.container.clear_widgets()
         if len(text) >= 4:
-            t2 = threading.Thread(target=self.searchs, args=text)
-            t2.start()
+            a = time.time()
+            self.root.ids.container.clear_widgets()
+            LIST = search(json.loads(requests.get(f"{url}/get_account_skeleton_list").text), text)
+            print(a-time.time())
+            # FAST
+            for i in LIST:
+                puple = get_account(i)
+                self.root.ids.container.add_widget(
+                    ThreeLineIconListItem(
+                        text=puple['name'],
+                        secondary_text=puple['birthdate'],
+                        tertiary_text=f"ID: {puple['id']}",
+                        on_release=lambda x: self.dialog_windows(x)
+                    ),
+                )
+            print(a-time.time())
 
-    def searchs(self, text):
-        LIST = search(json.loads(requests.get(f"{url}/get_account_skeleton_list").text), text)
-        # FAST
-        for i in LIST:
-            puple = get_account(i)
-            self.root.ids.container.add_widget(
-                ThreeLineIconListItem(
-                    text=puple['name'],
-                    secondary_text=puple['birthdate'],
-                    tertiary_text=f"ID: {puple['id']}",
-                    on_release=lambda x: self.dialog_windows(x)
-                ),
-            )
 
     def dialog_windows(self, task_windows):
         print(task_windows.text, task_windows.secondary_text)
@@ -519,9 +518,12 @@ class MoneyTest(MDApp):
         self.dialog_report_open.open()
 
     def send_report(self):
-        print(self.dialog_report_open.content_cls.ids.email_field.text)
+        if len(self.dialog_report_open.content_cls.ids.email_field.text) == 0:
+            return toast("Введите почту")
         toast("Отчет придет в течении минуты")
+        threading.Thread(target=self.threading_report).start()
         self.dialog_close("dialog_report_open")
+        self.dialog_close("dialog_confirmation_report")
 
     def dialog_connections(self):
         if not self.dialog_lan:
@@ -635,48 +637,89 @@ class MoneyTest(MDApp):
 
     def log_in(self):
         self.screen("teacher_screen")
-        time.sleep(6)
-        # login = self.root.ids.login.text
-        # password = self.root.ids.password.text
-        # check = json.loads(requests.get(f"{url}/check_login_credentials?login={login}&password={hashlib.sha256(password.encode()).hexdigest()}").text)
-        #
-        # if check:
-        #     account = get_account(login)
-        #     id_ = account["id"]
-        #     fullname = account["name"]
-        #     balance = account["balance"]
-        #     history = account["history"]
-        #     birthdate = account["birthdate"]
-        #
-        #     name = dict(enumerate(fullname.split(" "))).get(1) or fullname
-        #     family = dict(enumerate(fullname.split(" "))).get(0) or fullname
-        #     dad = dict(enumerate(fullname.split(" "))).get(2) or fullname
-        #     toast("Вы вошли")
-        #
-        #     if len(login) == 5:
-        #         self.id = login
-        #         self.password = password
-        #         self.root.ids.screen_manager.current = "main_screen"
-        #         print(history)
-        #         self.root.ids.balance_user.text = f"{balance} Kvant"
-        #         self.root.ids.name_profile_main.text = f"{family} {name} \n{dad}"
-        #         self.root.ids.name_main_screen.text = f"{name} >"
-        #     elif len(login) == 6:
-        #         self.root.ids.screen_manager.current = "teacher_screen"
-        #         self.root.ids.name_teacher_screen.text = name
-        #         self.root.ids.id_teacher_screen.text = id_
-        #         self.root.ids.birthday_teacher_screen.text = birthdate
-        #     elif len(login) == 7:
-        #         self.root.ids.screen_manager.current = "admin_screen"
-        #         self.root.ids.admin_name.text = account["name"]
-        #     if password == "12345678":
-        #         self.dialog_settings_accounts()
-        # else:
-        #     toast("Введены неверные данные")
+        login = self.root.ids.login.text
+        password = self.root.ids.password.text
+        check = json.loads(requests.get(f"{url}/check_login_credentials?login={login}&password={hashlib.sha256(password.encode()).hexdigest()}").text)
+
+        if check:
+            account = get_account(login)
+            id_ = account["id"]
+            fullname = account["name"]
+            balance = account["balance"]
+            history = account["history"]
+            birthdate = account["birthdate"]
+
+            name = dict(enumerate(fullname.split(" "))).get(1) or fullname
+            family = dict(enumerate(fullname.split(" "))).get(0) or fullname
+            dad = dict(enumerate(fullname.split(" "))).get(2) or fullname
+            toast("Вы вошли")
+
+            if len(login) == 5:
+                self.id = login
+                self.password = password
+                self.root.ids.screen_manager.current = "main_screen"
+                print(history)
+                self.root.ids.balance_user.text = f"{balance} Kvant"
+                self.root.ids.name_profile_main.text = f"{family} {name} \n{dad}"
+                self.root.ids.name_main_screen.text = f"{name} >"
+            elif len(login) == 6:
+                self.root.ids.screen_manager.current = "teacher_screen"
+                self.root.ids.name_teacher_screen.text = name
+                self.root.ids.id_teacher_screen.text = id_
+                self.root.ids.birthday_teacher_screen.text = birthdate
+            elif len(login) == 7:
+                self.root.ids.screen_manager.current = "admin_screen"
+                self.root.ids.admin_name.text = account["name"]
+            if password == "12345678":
+                self.dialog_settings_accounts()
+        else:
+            toast("Введены неверные данные")
 
     def screen(self, screen_name):
         self.root.ids.screen_manager.current = screen_name
 
+    def threading_report(self):
+        a = json.loads(requests.get("https://roughy-precious-neatly.ngrok-free.app/get_raiting_skeleton").text)
+        sorted_dict = dict(sorted(a.items(), key=lambda item: item[1], reverse=True))
+        name_list = []
+        rating_list = []
+        enter_list = []
+        for i in sorted_dict.keys():
+            name_list.append(i)
+            rating_list.append(sorted_dict[i])
+        enter_list.append(["ФИО", name_list])
+        enter_list.append(["Рейтинг", rating_list])
+        enter_list = dict(enter_list)
+        df = pandas.DataFrame(enter_list)
+        df.to_excel('./rating_list.xlsx')
+        with open("./rating_list.xlsx", "rb") as f:
+            a = f.read()
+            send = kvant_lib.send_mail(self.dialog_report_open.content_cls.ids.email_field.text, a,
+                                       self.root.ids.login.text, self.root.ids.password.text)
+            print(self.dialog_report_open.content_cls.ids.email_field.text)
+            requests.post(url=f"{url}/execute", data=send.encode("utf-8"))
+
+    def confirmation_report(self):
+        if not self.dialog_confirmation_report:
+            self.dialog_confirmation_report = MDDialog(
+                title=f"Вы точно хотите отправить отчет?",
+                text="Полугодие будет закрыто и отчет начнется заново",
+                buttons=[
+                    MDFlatButton(
+                        text="Отмена",
+                        theme_text_color="Custom",
+                        text_color=self.theme_cls.primary_color,
+                        on_release=lambda x: self.dialog_close("dialog_confirmation_report")
+                    ),
+                    MDFlatButton(
+                        text="Да",
+                        theme_text_color="Custom",
+                        text_color=self.theme_cls.primary_color,
+                        on_release=lambda x: self.dialog_report()
+                    ),
+                ],
+            )
+        self.dialog_confirmation_report.open()
 
 if __name__ == "__main__":
     MoneyTest().run()

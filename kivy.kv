@@ -108,7 +108,7 @@ Screen:
                             text_size: "39sp"
                             pos_hint: {"center_x": .5, "center_y": .315}
                             on_release:
-                                app.threandings()
+                                app.log_in()
             MDScreen:
                 name: 'main_screen'
                 FitImage:
@@ -416,7 +416,7 @@ Screen:
                                         icon: "account-plus"
                                 OneLineAvatarListItem:
                                     text: "Создать отчет"
-                                    on_release: app.dialog_report()
+                                    on_release: app.confirmation_report()
                                     IconLeftWidget:
                                         icon: "table"
                                 OneLineAvatarListItem:
