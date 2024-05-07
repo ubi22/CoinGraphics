@@ -420,6 +420,11 @@ Screen:
                                     IconLeftWidget:
                                         icon: "table"
                                 OneLineAvatarListItem:
+                                    text: "Сбросить систему рейтинга"
+                                    on_release: app.confirmation_report()
+                                    IconLeftWidget:
+                                        icon: "cloud-refresh"
+                                OneLineAvatarListItem:
                                     text: "Выйти"
                                     on_release: app.screen('login_screen')
                                     IconLeftWidget:
