@@ -5,6 +5,7 @@ from search import search
 from kivymd.uix.list import IconLeftWidget
 from balance import balance_def
 import random
+from kivy.clock import mainthread
 import json
 import time
 import threading
@@ -103,7 +104,6 @@ class MoneyTest(MDApp):
         )
         self.file_manager.ext = [".xlsx"]
         self.fg = None
-        self.a = threading.Thread(target=self.excel_read())
         self.elevation = 0
 
     def manager_file_exel_open(self):
@@ -122,7 +122,7 @@ class MoneyTest(MDApp):
         self.root.ids.generate_table.clear_widgets()
         print(path)
         self.path = path
-        self.a.start()
+        threading.Thread(target=self.excel_read).start()
 
     def excel_read(self):
         try:
@@ -151,6 +151,7 @@ class MoneyTest(MDApp):
                 data.append(
                         [f"{generates}", f"{name[i]}", f'{birthday_enter}', f"{password}", f"{name_parents[i]}",
                             f"{phone[i]}", f"{email[i]}"])
+
             birthday_list = []
             id_list = []
             name_list = []
@@ -168,15 +169,12 @@ class MoneyTest(MDApp):
             enter_list = dict(enter_list)
             df = pandas.DataFrame(enter_list)
             df.to_excel('./list_user.xlsx')
+            self.table_create(data)
 
-            self.exits(data)
         except KeyError:
             toast("Неправильные столбцы")
 
-    def exits(self, data):
-        self.a.join()
-        self.table_create(data)
-
+    @mainthread
     def table_create(self, data):
         self.charge_contests = MDDataTable(
             size_hint=(0.9, 1),
