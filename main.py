@@ -83,11 +83,13 @@ class MoneyTest(MDApp):
     name = str
     password = str
     id = str
+    sceleton_person = json.loads(requests.get(f"{url}/get_account_skeleton_list").text)
     birthday = str
     user_modified = str
     icon = "scr/logo (2).png"
     title = "Kvantomat"
     charge_contests = None
+    text_search = ""
     path = ""
     balance = 0
 
@@ -131,9 +133,6 @@ class MoneyTest(MDApp):
             df['Дата рождения'] = pandas.to_datetime(df['Дата рождения']).dt.strftime('%d %m %Y')
             birthday = df['Дата рождения']
             name = df['ФИО']
-            name_parents = df["Родители"]
-            phone = df['Контакты']
-            email = df['Почта']
             generates = self.generate()
             data = []
             for i in range(len(birthday)):
@@ -149,8 +148,7 @@ class MoneyTest(MDApp):
                     generates = self.generate()
 
                 data.append(
-                        [f"{generates}", f"{name[i]}", f'{birthday_enter}', f"{password}", f"{name_parents[i]}",
-                            f"{phone[i]}", f"{email[i]}"])
+                        [f"{generates}", f"{name[i]}", f'{birthday_enter}', f"{password}"])
 
             birthday_list = []
             id_list = []
@@ -170,9 +168,13 @@ class MoneyTest(MDApp):
             df = pandas.DataFrame(enter_list)
             df.to_excel('./list_user.xlsx')
             self.table_create(data)
-
+            print(data)
         except KeyError:
-            toast("Неправильные столбцы")
+            self.send_message("Неправильные столбцы")
+
+    @mainthread
+    def send_message(self, message):
+        toast(message)
 
     @mainthread
     def table_create(self, data):
@@ -184,19 +186,13 @@ class MoneyTest(MDApp):
                 ("ФИО", dp(52)),
                 ("Дата рождения", dp(19)),
                 ("Пароль", dp(19.2)),
-                ("Родители", dp(52)),
-                ("Контакты", dp(25)),
-                ("Почта", dp(45)),
             ],
             row_data=[
                 [
                     f"{data[i][0]}",
                     f"{data[i][1]}",
                     f"{data[i][2]}",
-                    f"{data[i][3]}",
-                    f"{data[i][4]}",
-                    f"{data[i][5]}",
-                    f"{data[i][6]}",
+                    f"{data[i][3]}"
                 ] for i in range(len(data))
             ],
         )
@@ -298,11 +294,13 @@ class MoneyTest(MDApp):
             self.dialog_close("dialog_for_send")
 
     def search_students(self, text=""):
+        if len(text) < len(self.text_search):
+            self.text_search = text
+            return
         if len(text) >= 4:
             a = time.time()
             self.root.ids.container.clear_widgets()
-            LIST = search(json.loads(requests.get(f"{url}/get_account_skeleton_list").text), text)
-            print(a-time.time())
+            LIST = search(self.sceleton_person, text)
             # FAST
             for i in LIST:
                 puple = get_account(i)
@@ -315,7 +313,7 @@ class MoneyTest(MDApp):
                     ),
                 )
             print(a-time.time())
-
+            self.text_search = text
 
     def dialog_windows(self, task_windows):
         print(task_windows.text, task_windows.secondary_text)
@@ -647,50 +645,53 @@ class MoneyTest(MDApp):
         self.dialog_close("dialog_settings_account")
 
     def log_in(self):
-        login = self.root.ids.login.text
-        password = self.root.ids.password.text
-        check = requests.get(f"{url}/check_login_credentials?login={login}&password={hashlib.sha256(password.encode()).hexdigest()}").text
-        print(f"The check is: {check}")
-        check = json.loads(check)
-        if check:
-            account = get_account(login)
-            id_ = account["id"]
-            fullname = account["name"]
-            balance = account["balance"]
-            history = account["history"]
-            birthdate = account["birthdate"]
+        try:
+            login = self.root.ids.login.text
+            password = self.root.ids.password.text
+            check = requests.get(f"{url}/check_login_credentials?login={login}&password={hashlib.sha256(password.encode()).hexdigest()}").text
+            print(f"The check is: {check}")
+            check = json.loads(check)
+            if check:
+                account = get_account(login)
+                id_ = account["id"]
+                fullname = account["name"]
+                balance = account["balance"]
+                history = account["history"]
+                birthdate = account["birthdate"]
 
-            name = dict(enumerate(fullname.split(" "))).get(1) or fullname
-            family = dict(enumerate(fullname.split(" "))).get(0) or fullname
-            dad = dict(enumerate(fullname.split(" "))).get(2) or fullname
-            toast("Вы вошли")
+                name = dict(enumerate(fullname.split(" "))).get(1) or fullname
+                family = dict(enumerate(fullname.split(" "))).get(0) or fullname
+                dad = dict(enumerate(fullname.split(" "))).get(2) or fullname
+                toast("Вы вошли")
 
-            if len(login) == 5:
-                self.id = login
-                self.password = password
-                self.root.ids.screen_manager.current = "main_screen"
-                print(history)
-                self.root.ids.balance_user.text = f"{balance} Kvant"
-                self.root.ids.name_profile_main.text = f"{family} {name} \n{dad}"
-                self.root.ids.name_main_screen.text = f"{name} >"
-            elif len(login) == 6:
-                self.root.ids.screen_manager.current = "teacher_screen"
-                self.root.ids.name_teacher_screen.text = name
-                self.root.ids.id_teacher_screen.text = id_
-                self.root.ids.birthday_teacher_screen.text = birthdate
-            elif len(login) == 7:
-                self.root.ids.screen_manager.current = "admin_screen"
-                self.root.ids.admin_name.text = account["name"]
-            if password == "12345678":
-                self.dialog_settings_accounts()
-        else:
-            toast("Введены неверные данные")
+                if len(login) == 5:
+                    self.id = login
+                    self.password = password
+                    self.root.ids.screen_manager.current = "main_screen"
+                    print(history)
+                    self.root.ids.balance_user.text = f"{balance} Kvant"
+                    self.root.ids.name_profile_main.text = f"{family} {name} \n{dad}"
+                    self.root.ids.name_main_screen.text = f"{name} >"
+                elif len(login) == 6:
+                    self.root.ids.screen_manager.current = "teacher_screen"
+                    self.root.ids.name_teacher_screen.text = name
+                    self.root.ids.id_teacher_screen.text = id_
+                    self.root.ids.birthday_teacher_screen.text = birthdate
+                elif len(login) == 7:
+                    self.root.ids.screen_manager.current = "admin_screen"
+                    self.root.ids.admin_name.text = account["name"]
+                if password == "12345678":
+                    self.dialog_settings_accounts()
+            else:
+                toast("Введены неверные данные")
+        except json.decoder.JSONDecodeError:
+            self.send_message("Ошибка сервера")
 
     def screen(self, screen_name):
         self.root.ids.screen_manager.current = screen_name
 
     def threading_report(self):
-        a = json.loads(requests.get("https://roughy-precious-neatly.ngrok-free.app/get_raiting_skeleton").text)
+        a = json.loads(requests.get(f"{url}/get_raiting_skeleton").text)
         sorted_dict = dict(sorted(a.items(), key=lambda item: item[1], reverse=True))
         name_list = []
         rating_list = []
