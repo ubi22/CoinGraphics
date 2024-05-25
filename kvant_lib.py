@@ -6,7 +6,8 @@ def create_user(id, fio, birthdate, password, my_id, my_password):
         "id": id,
         "fio": fio,
         "birthdate": birthdate,
-        "password": password
+        "password": password,
+        "creator": my_id
     }
 
     return form_command(my_id, my_password, command, "CreateUser")
@@ -39,10 +40,11 @@ def change_password(of, to, my_id, my_password):
     return form_command(my_id, my_password, command, "ChangePassword")
 
 
-def send_mail(to, data: bytes, my_id, my_password):
+def send_mail(to, data: bytes, message, my_id, my_password):
     command = {
         "to": to,
-        "data": list(data)
+        "data": list(data),
+        "title_subject": message
     }
 
     return form_command(my_id, my_password, command, "SendMail")

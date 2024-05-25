@@ -69,6 +69,13 @@ class MenuHeader(MDBoxLayout):
 
 
 
+class SigInt:
+    def __init__(self):
+        self.val = False
+
+    def set(self, val):
+        self.val = val
+
 
 class MoneyTest(MDApp):
     dialog_report_open = None
@@ -83,7 +90,7 @@ class MoneyTest(MDApp):
     name = str
     password = str
     id = str
-    sceleton_person = json.loads(requests.get(f"{url}/get_account_skeleton_list").text)
+    dialog_loading = None
     birthday = str
     user_modified = str
     icon = "scr/logo (2).png"
@@ -92,6 +99,8 @@ class MoneyTest(MDApp):
     text_search = ""
     path = ""
     balance = 0
+    search_handle: threading.Thread = None
+    search_sig_int = SigInt()
 
     url = "https://kvantomat24.serveo.net"
 
@@ -126,40 +135,54 @@ class MoneyTest(MDApp):
         self.path = path
         threading.Thread(target=self.excel_read).start()
 
+    @mainthread
+    def loading_windows(self, i, data):
+        if not self.dialog_loading:
+            self.dialog_loading = MDDialog(
+                title="Загрузка...",
+                text=f'{i}/',
+                auto_dismiss=False
+            )
+        self.dialog_loading.open()
+        self.dialog_loading.text = f"{i + 1}/{len(data)} Человек"
+        if i + 1 == len(data):
+            self.dialog_loading.dismiss()
+
     def excel_read(self):
         try:
             print(self.path)
             df = pandas.read_excel(f'{self.path}')
-            df['Дата рождения'] = pandas.to_datetime(df['Дата рождения']).dt.strftime('%d %m %Y')
             birthday = df['Дата рождения']
             name = df['ФИО']
             generates = self.generate()
             data = []
             for i in range(len(birthday)):
-                birthday_enter = birthday[i].replace(" ", ".")
+                birthday_enter = birthday[i]
                 password = "12345678"
                 check = json.loads(requests.get(f"{url}/does_exist_pair?name={name[i]}&birthdate={birthday_enter}").text)
-                print(check)
+                print(f"Check: {check}")
                 if check is not None:
                     account = get_account(check)
                     generates = check
                     password = "Уже есть"
                 else:
                     generates = self.generate()
-
+                self.loading_windows(i, birthday)
                 data.append(
                         [f"{generates}", f"{name[i]}", f'{birthday_enter}', f"{password}"])
-
+            print("sdfghjsdfghsdfghghjasdfasdhjkfgashjdfgashjkdfgasdjkf")
             birthday_list = []
             id_list = []
             name_list = []
             enter_list = []
             password_list = []
-            for i in  range(len(data)):
+            print("PRINT1!")
+            for i in range(len(data)):
                 id_list.append(data[i][0])
                 name_list.append(data[i][1])
                 birthday_list.append(data[i][2])
                 password_list.append(data[i][3])
+            print("PRINT1@")
             enter_list.append(["ID", id_list])
             enter_list.append(["ФИО", name_list])
             enter_list.append(["Дата рождение", birthday_list])
@@ -168,7 +191,7 @@ class MoneyTest(MDApp):
             df = pandas.DataFrame(enter_list)
             df.to_excel('./list_user.xlsx')
             self.table_create(data)
-            print(data)
+            print(f"Data: {data}")
         except KeyError:
             self.send_message("Неправильные столбцы")
 
@@ -203,21 +226,21 @@ class MoneyTest(MDApp):
             id="rr",
             text='Создать пользователей',
             pos_hint=({"center_x": .7, "center_y": .1}),
-            on_release=lambda x: self.create_users_sql()
+            on_release=lambda x: self.threading('create_users_sql')
 
         )
         self.root.ids.boxlayout.add_widget(self.fg)
 
     def create_users_sql(self):
+        self.dialog_email_send()
+
         for i in range(len(self.charge_contests.row_data)):
             if self.charge_contests.row_data[i][3] == "Уже есть":
-                toast("Aккаунт создан")
+                self.send_message("Aккаунт создан")
             else:
-                values = [self.charge_contests.row_data[i][0], self.charge_contests.row_data[i][3], self.charge_contests.row_data[i][1], self.charge_contests.row_data[i][2]]
                 json = kvant_lib.create_user(self.charge_contests.row_data[i][0], self.charge_contests.row_data[i][1], self.charge_contests.row_data[i][2], "12345678", self.root.ids.login.text,
                                              self.root.ids.password.text)
                 requests.post(url=f"{url}/execute", data=json.encode("utf-8"))
-            self.dialog_email_send()
 
     def exit_manager(self, *args):
         self.manager_open = False
@@ -288,32 +311,57 @@ class MoneyTest(MDApp):
         else:
             with open("./list_user.xlsx", "rb") as f:
                 a = f.read()
-                json = kvant_lib.send_mail(self.dialog_for_send.content_cls.ids.email_for_send.text, a, self.root.ids.login.text, self.root.ids.password.text)
+                json = kvant_lib.send_mail(self.dialog_for_send.content_cls.ids.email_for_send.text, a, "Список учеников", self.root.ids.login.text, self.root.ids.password.text)
                 requests.post(url=f"{url}/execute", data=json.encode("utf-8"))
             self.screen("teacher_screen")
             self.dialog_close("dialog_for_send")
 
+    def threading_search(self, text):
+        if self.search_sig_int.val:
+            self.search_sig_int.set(True)
+            self.search_handle.join()
+            self.search_sig_int.set(False)
+            self.clear_list("container")
+
+        self.search_handle = threading.Thread(target=self.search_students,args=(text,))
+        self.search_handle.start()
+
     def search_students(self, text=""):
-        if len(text) < len(self.text_search):
-            self.text_search = text
-            return
+        my_list = []
+        # if len(text) < len(self.text_search):
+        #     self.text_search = text
+        #     return
+
         if len(text) >= 4:
-            a = time.time()
-            self.root.ids.container.clear_widgets()
-            LIST = search(self.sceleton_person, text)
-            # FAST
+            self.clear_list("container")
+            search_person = json.loads(requests.get(f"{url}/get_account_skeleton_list").text)
+            LIST = search(search_person, text, self.search_sig_int)
+            if LIST is None:
+                return
             for i in LIST:
-                puple = get_account(i)
-                self.root.ids.container.add_widget(
-                    ThreeLineIconListItem(
-                        text=puple['name'],
-                        secondary_text=puple['birthdate'],
-                        tertiary_text=f"ID: {puple['id']}",
-                        on_release=lambda x: self.dialog_windows(x)
-                    ),
-                )
-            print(a-time.time())
+                if self.search_sig_int.val:
+                    return
+                my_list.append(search_person[i])
+
+            self.clear_list("container")
+            for i in my_list:
+                self.string_person(i)
             self.text_search = text
+
+    @mainthread
+    def clear_list(self, id):
+        eval(f"self.root.ids.{id}.clear_widgets()")
+
+    @mainthread
+    def string_person(self, puple):
+        self.root.ids.container.add_widget(
+            ThreeLineIconListItem(
+                text=puple['name'],
+                secondary_text=puple['birthdate'],
+                tertiary_text=f"ID: {puple['id']}",
+                on_release=lambda x: self.dialog_windows(x)
+            ),
+        )
 
     def dialog_windows(self, task_windows):
         print(task_windows.text, task_windows.secondary_text)
@@ -342,12 +390,14 @@ class MoneyTest(MDApp):
     def dialog_close(self, a):
         eval(f"self.{a}.dismiss()")
 
+    @mainthread
     def dialog_email_send(self):
         if not self.dialog_for_send:
             self.dialog_for_send = MDDialog(
                 radius=[20, 7, 20, 7],
                 title="Введите почту для отправки копии списков",
                 type="custom",
+                auto_dismiss=False,
                 content_cls=MDBoxLayout(
                     MDTextField(
                         id="email_for_send",
@@ -607,9 +657,8 @@ class MoneyTest(MDApp):
             else:
                 print("My login is:")
                 print(self.root.ids.login.text)
-                json = kvant_lib.create_user(login, name, birthday, password, self.root.ids.login.text, self.root.ids.password.text)
+                json = kvant_lib.create_user(login, name, birthday, password, self.root.ids.login.text, self.root.ids.login.text, self.root.ids.password.text)
                 requests.post(url=f"{url}/execute", data=json.encode("utf-8"))
-
                 self.screen("login_screen")
                 toast("Создали аккаунт")
 

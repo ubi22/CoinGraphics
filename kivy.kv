@@ -544,11 +544,11 @@ Screen:
                                 mode: "round"
                                 size_hint: .75, .40
                                 pos_hint: {"center_x": .5, "center_y": .5}
-                                hint_text: 'Поиск по ФИО, Дата рождения, ID'
-                                on_text: app.search_students(self.text)
-                            MDIconButton:
-                                icon: 'magnify'
-                                pos_hint: {"center_x": .85, "center_y": .5}
+                                hint_text: 'Поиск по ФИО'
+                                on_text: app.threading_search(self.text)
+#                            MDIconButton:
+#                                icon: 'magnify'
+#                                pos_hint: {"center_x": .85, "center_y": .5}
                             MDProgressBar:
                                 type: "determinate"
                                 running_duration: 1
