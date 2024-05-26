@@ -237,8 +237,7 @@ class MoneyTest(MDApp):
             if self.charge_contests.row_data[i][3] == "Уже есть":
                 self.send_message("Aккаунт создан")
             else:
-                json = kvant_lib.create_user(self.charge_contests.row_data[i][0], self.charge_contests.row_data[i][1], self.charge_contests.row_data[i][2], "12345678", self.root.ids.login.text,
-                                             self.root.ids.password.text)
+                json = kvant_lib.create_user(self.charge_contests.row_data[i][0], self.charge_contests.row_data[i][1], self.charge_contests.row_data[i][2], "12345678", self.root.ids.login.text, self.root.ids.password.text)
                 requests.post(url=f"{url}/execute", data=json.encode("utf-8"))
 
     def exit_manager(self, *args):
@@ -660,44 +659,44 @@ class MoneyTest(MDApp):
         try:
             login = self.root.ids.login.text
             password = self.root.ids.password.text
-            # check = requests.get(f"{url}/check_login_credentials?login={login}&password={hashlib.sha256(password.encode()).hexdigest()}").text
-            # print(f"The check is: {check}")
-            # check = json.loads(check)
-            # if check:
-            #     account = get_account(login)
-            #     id_ = account["id"]
-            #     fullname = account["name"]
-            #     balance = account["balance"]
-            #     history = account["history"]
-            #     birthdate = account["birthdate"]
+            check = requests.get(f"{url}/check_login_credentials?login={login}&password={hashlib.sha256(password.encode()).hexdigest()}").text
+            print(f"The check is: {check}")
+            check = json.loads(check)
+            if check:
+                account = get_account(login)
+                id_ = account["id"]
+                fullname = account["name"]
+                balance = account["balance"]
+                history = account["history"]
+                birthdate = account["birthdate"]
 
-                # name = dict(enumerate(fullname.split(" "))).get(1) or fullname
-                # family = dict(enumerate(fullname.split(" "))).get(0) or fullname
-                # dad = dict(enumerate(fullname.split(" "))).get(2) or fullname
-                # toast("Вы вошли")
+                name = dict(enumerate(fullname.split(" "))).get(1) or fullname
+                family = dict(enumerate(fullname.split(" "))).get(0) or fullname
+                dad = dict(enumerate(fullname.split(" "))).get(2) or fullname
+                toast("Вы вошли")
 
-            if len(login) == 5:
-                # self.id = login
-                # self.password = password
-                self.root.ids.screen_manager.current = "main_screen"
-                # print(history)
-                # self.root.ids.balance_user.text = f"{balance} Kvant"
-                # self.root.ids.name_profile_main.text = f"{family} {name} \n{dad}"
-                # self.root.ids.name_main_screen.text = f"{name} >"
-            elif len(login) == 6:
-                self.root.ids.screen_manager.current = "teacher_screen"
-                # self.root.ids.name_teacher_screen.text = name
-                # self.root.ids.id_teacher_screen.text = id_
-                # self.root.ids.birthday_teacher_screen.text = birthdate
-            elif len(login) == 7:
-                self.root.ids.screen_manager.current = "admin_screen"
-                # self.root.ids.admin_name.text = account["name"]
-            if password == "12345678":
-                self.dialog_settings_accounts()
+                if len(login) == 5:
+                    self.id = login
+                    self.password = password
+                    self.root.ids.screen_manager.current = "main_screen"
+                    print(history)
+                    self.root.ids.balance_user.text = f"{balance} Kvant"
+                    self.root.ids.name_profile_main.text = f"{family} {name} \n{dad}"
+                    self.root.ids.name_main_screen.text = f"{name} >"
+                elif len(login) == 6:
+                    self.root.ids.screen_manager.current = "teacher_screen"
+                    self.root.ids.name_teacher_screen.text = name
+                    self.root.ids.id_teacher_screen.text = id_
+                    self.root.ids.birthday_teacher_screen.text = birthdate
+                elif len(login) == 7:
+                    self.root.ids.screen_manager.current = "admin_screen"
+                    self.root.ids.admin_name.text = account["name"]
+                if password == "12345678":
+                    self.dialog_settings_accounts()
             else:
                 toast("Введены неверные данные")
-        # except json.decoder.JSONDecodeError:
-        except TypeError:
+        except json.decoder.JSONDecodeError:
+        # except TypeError:
             self.send_message("Ошибка сервера")
 
     def screen(self, screen_name):
