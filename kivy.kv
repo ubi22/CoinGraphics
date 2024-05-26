@@ -104,7 +104,13 @@ Screen:
                             text_size: "39sp"
                             pos_hint: {"center_x": .5, "center_y": .315}
                             on_release:
-                                app.log_in()
+                                app.threading("log_in")
+                        MDSpinner:
+                            id: spinner_login_screen
+                            size_hint: None, None
+                            size: dp(75), dp(75)
+                            pos_hint: {'center_x': .5, 'center_y': .5}
+                            active: False
             MDScreen:
                 name: 'main_screen'
                 FitImage:
@@ -412,7 +418,7 @@ Screen:
                                         icon: "account-plus"
                                 OneLineAvatarListItem:
                                     text: "Создать отчет"
-                                    on_release: app.confirmation_report()
+                                    on_release: app.dialog_report()
                                     IconLeftWidget:
                                         icon: "table"
                                 OneLineAvatarListItem:
@@ -421,8 +427,8 @@ Screen:
                                     IconLeftWidget:
                                         icon: "cloud-refresh"
                                 OneLineAvatarListItem:
-                                    text: "Выйти"
-                                    on_release: app.screen('login_screen')
+                                    text: "Назад"
+                                    on_release: app.screen('teacher_screen')
                                     IconLeftWidget:
                                         icon: "exit-to-app"
                         MDFillRoundFlatIconButton:
@@ -462,7 +468,7 @@ Screen:
                         size_hint: .85, .07
                         width: "400dp"
                         hint_text: "ФИО"
-                        pos_hint: {"center_x": .5, "center_y": .55}
+                        pos_hint: {"centespr_x": .5, "center_y": .55}
                     MDTextField:
                         id: birthday_admin_new
                         mode: "rectangle"
@@ -527,14 +533,13 @@ Screen:
                         padding: dp(20)
                         MDFloatLayout:
                             adaptive_height: True
-
                             MDIconButton:
                                 icon_size: '25sp'
                                 md_bg_color: "#222126"
                                 icon_color: "#ffffff"
-                                icon: "account-plus"
+                                icon: "account-star-outline" if id_teacher_screen.text == 'admin' else 'account-plus'
                                 pos_hint: {"center_x": .97, "center_y": .5}
-                                on_release: app.screen("new_users")
+                                on_release:  app.screen("admin_screen") if id_teacher_screen.text == 'admin' else app.screen("new_users")
                             MDTextField:
                                 id: search_students
                                 mode: "round"
@@ -542,14 +547,12 @@ Screen:
                                 pos_hint: {"center_x": .5, "center_y": .5}
                                 hint_text: 'Поиск по ФИО'
                                 on_text: app.threading_search(self.text)
+
 #                            MDIconButton:
 #                                icon: 'magnify'
 #                                pos_hint: {"center_x": .85, "center_y": .5}
-                            MDProgressBar:
-                                type: "determinate"
-                                running_duration: 1
-                                catching_duration: 1.5
                         MDScrollView:
+
                             MDList:
                                 id: container
             Scr:
@@ -589,7 +592,6 @@ Screen:
                     ScrollView:
                         MDBoxLayout:
                             id: generate_table
-
         MDNavigationDrawer:
             id: nav_drawer
             anchor: "right"

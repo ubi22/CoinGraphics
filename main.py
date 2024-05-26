@@ -3,7 +3,7 @@ from kivymd.uix.floatlayout import MDFloatLayout
 from kivy.core.window import Window
 from search import search
 from kivymd.uix.list import IconLeftWidget
-from balance import balance_def
+
 import random
 from kivy.clock import mainthread
 import json
@@ -361,18 +361,24 @@ class MoneyTest(MDApp):
             ),
         )
 
+    def balance_def(self, ids):
+        id_user = ids.replace("ID: ", "")
+        balance = json.loads(requests.get(f"{url}/get_account/{id_user}").text)["balance"]
+        self.dialog_list.text = f'Баланс: {balance}'
+        return balance
+
     def dialog_windows(self, task_windows):
         print(task_windows.text, task_windows.secondary_text)
         self.name = task_windows.text
         self.birthday = task_windows.secondary_text
         self.id = task_windows.tertiary_text
-        balance = balance_def(f"{self.id}")
+        threading.Thread(target=self.balance_def, args=(self.id,)).start()
         if self.dialog_list:
             self.dialog_list = None
         if not self.dialog_list:
             self.dialog_list = MDDialog(
                 title=f"{self.name}",
-                text=f"Баланс: {balance}",
+                text=f"Баланс: Загрузка...",
                 type="simple",
                 radius=[20, 7, 20, 7],
                 items=[
@@ -384,7 +390,7 @@ class MoneyTest(MDApp):
 
             )
             self.dialog_list.open()
-
+    @mainthread
     def dialog_close(self, a):
         eval(f"self.{a}.dismiss()")
 
@@ -417,14 +423,14 @@ class MoneyTest(MDApp):
             )
         self.dialog_for_send.open()
 
-    def dialog_windows_change(self, task_name):
+    def dialog_windows_change(self):
         self.dialog_close("dialog_list")
         if self.dialog_change:
             self.dialog_change = None
         if not self.dialog_change:
             self.dialog_change = MDDialog(
                 radius=[20, 7, 20, 7],
-                title=f"{task_name}",
+                title=f"",
                 type="custom",
                 content_cls=MDBoxLayout(
                     MDTextField(
@@ -452,7 +458,7 @@ class MoneyTest(MDApp):
                         text="Отредактировать",
                         theme_text_color="Custom",
                         text_color=self.theme_cls.primary_color,
-                        on_release=lambda x: self.settings_balance(task_name)
+                        on_release=lambda x: self.threading("settings_balance")
                     ),
                 ],
 
@@ -475,7 +481,7 @@ class MoneyTest(MDApp):
                         text="Да",
                         theme_text_color="Custom",
                         text_color=self.theme_cls.primary_color,
-                        on_release=lambda x: self.clear_account()
+                        on_release=lambda x: self.threading("clear_account")
                     ),
                 ],
             )
@@ -483,17 +489,21 @@ class MoneyTest(MDApp):
 
     def clear_account(self):
         id = self.id.replace("ID: ", "")
+        self.dialog_close("dialog_confirmation")
+        self.dialog_close("dialog_list")
         if self.dialog_confirmation.text == "Все данные о пользователе будут стерты безвозратно":
             json = kvant_lib.delete_user(id, self.root.ids.login.text, self.root.ids.password.text)
             requests.post(url=f"{url}/execute", data=json.encode("utf-8"))
-            toast("Аккаунт удален")
+            self.send_message("Аккаунт удален")
         else:
             json = kvant_lib.change_password(id, "12345678",self.root.ids.login.text, self.root.ids.password.text)
             requests.post(url=f"{url}/execute", data=json.encode("utf-8"))
-            toast("Пароль сброшен")
-        self.dialog_close("dialog_confirmation")
-        self.dialog_close("dialog_list")
-        self.root.ids.container.clear_widgets()
+            self.send_message("Пароль сброшен")
+        self.threading_action("self.root.ids.container.clear_widgets()")
+
+    @mainthread
+    def threading_action(self, action):
+        eval(action)
 
     def dialog_windows_task(self, task):
         task = task.text
@@ -506,12 +516,12 @@ class MoneyTest(MDApp):
             self.dialog_confirmation.text = f"Все данные о пользователе будут стерты безвозратно"
             self.dialog_confirmation.title = f"Вы точно хотите удалить: \n{self.name}?"
         elif task == "Начислить":
-            self.dialog_windows_change(task)
+            self.dialog_windows_change()
             self.dialog_change.title = "Начислить"
             self.dialog_change.content_cls.ids.first_field.hint_text = "Сколько"
             self.dialog_change.content_cls.ids.secondary_field.hint_text = "За что"
         elif task == "Списание":
-            self.dialog_windows_change(task)
+            self.dialog_windows_change()
             self.dialog_change.title = "Списать"
             self.dialog_change.content_cls.ids.first_field.hint_text = "Сколько"
             self.dialog_change.content_cls.ids.secondary_field.hint_text = "За что"
@@ -525,25 +535,31 @@ class MoneyTest(MDApp):
         self.theme_cls.primary_palette = "DeepPurple"
         return Builder.load_file("kivy.kv")
 
-    def settings_balance(self, confirm):
-        sum = int(self.dialog_change.content_cls.ids.first_field.text)
-        balance = balance_def(self.id)
-        print(self.id)
-        id = self.id.replace("ID: ", "")
-        if confirm == "Списание":
-            if balance < sum:
-                toast("Недостаточно средст")
-            else:
-                json = kvant_lib.change_balance(-sum, id, self.dialog_change.content_cls.ids.secondary_field.text, self.root.ids.login.text, self.root.ids.password.text)
+    def settings_balance(self):
+        try:
+            sum = int(self.dialog_change.content_cls.ids.first_field.text)
+            if len(self.dialog_change.content_cls.ids.secondary_field.text) < 8:
+                self.send_message("Введите за что")
+                return
+            balance = self.balance_def(self.id)
+            print(self.id)
+            id = self.id.replace("ID: ", "")
+            print(self.dialog_change.title)
+            if self.dialog_change.title == "Списать":
+                if balance < sum:
+                    self.send_message("Недостаточно средст")
+                else:
+                    json = kvant_lib.change_balance(-sum, id, self.dialog_change.content_cls.ids.secondary_field.text, self.root.ids.login.text, self.root.ids.password.text)
+                    requests.post(url=f"{url}/execute", data=json.encode("utf-8"))
+                    self.send_message("Списано")
+                    self.dialog_close("dialog_change")
+            elif self.dialog_change.title == "Начислить":
+                json = kvant_lib.change_balance(sum, id, self.dialog_change.content_cls.ids.secondary_field.text, self.root.ids.login.text, self.root.ids.password.text)
                 requests.post(url=f"{url}/execute", data=json.encode("utf-8"))
-                toast("Списано")
+                self.send_message("Начислино")
                 self.dialog_close("dialog_change")
-        elif confirm == "Начислить":
-            json = kvant_lib.change_balance(sum, id, self.dialog_change.content_cls.ids.secondary_field.text, self.root.ids.login.text, self.root.ids.password.text)
-            requests.post(url=f"{url}/execute", data=json.encode("utf-8"))
-            toast("Начислино")
-            self.dialog_close("dialog_change")
-
+        except ValueError:
+            self.send_message("Введите сумму начисления")
     def threading(self, fun):
         eval(f"threading.Thread(target=self.{fun}).start()")
 
@@ -575,12 +591,15 @@ class MoneyTest(MDApp):
         self.dialog_report_open.open()
 
     def send_report(self):
-        if len(self.dialog_report_open.content_cls.ids.email_field.text) == 0:
-            return toast("Введите почту")
-        toast("Отчет придет в течении минуты")
-        threading.Thread(target=self.threading_report).start()
-        self.dialog_close("dialog_report_open")
-        self.dialog_close("dialog_confirmation_report")
+        try:
+            if len(self.dialog_report_open.content_cls.ids.email_field.text) == 0:
+                return toast("Введите почту")
+            toast("Отчет придет в течении минуты")
+            threading.Thread(target=self.threading_report).start()
+            self.dialog_close("dialog_report_open")
+            self.dialog_close("dialog_confirmation_report")
+        except json.decoder.JSONDecodeError:
+            self.send_message("Ошибка сервера")
 
     def update(self):
         login = self.root.ids.login.text
@@ -599,7 +618,7 @@ class MoneyTest(MDApp):
                 ))
 
 
-        self.root.ids.balance_user.text = f"{balance_def(login)} Kvant"
+        self.root.ids.balance_user.text = f"{self.balance_def(login)} Kvant"
 
     def registration(self):
             login = self.root.ids.login_admin_new.text
@@ -619,9 +638,9 @@ class MoneyTest(MDApp):
             else:
                 print("My login is:")
                 print(self.root.ids.login.text)
-                json = kvant_lib.create_user(login, name, birthday, password, self.root.ids.login.text, self.root.ids.login.text, self.root.ids.password.text)
+                json = kvant_lib.create_user(login, name, birthday, password, self.root.ids.login.text, self.root.ids.password.text)
                 requests.post(url=f"{url}/execute", data=json.encode("utf-8"))
-                self.screen("login_screen")
+                self.screen("admin_screen")
                 toast("Создали аккаунт")
 
     def dialog_settings_accounts(self):
@@ -629,6 +648,7 @@ class MoneyTest(MDApp):
             self.dialog_settings_account = MDDialog(
                 title="Измените пароль по умолчанию",
                 type="custom",
+                auto_dismiss=False,
                 content_cls=MDBoxLayout(
                     MDTextField(
                         id="password_input",
@@ -659,45 +679,57 @@ class MoneyTest(MDApp):
         try:
             login = self.root.ids.login.text
             password = self.root.ids.password.text
+            self.root.ids.spinner_login_screen.active = True
             check = requests.get(f"{url}/check_login_credentials?login={login}&password={hashlib.sha256(password.encode()).hexdigest()}").text
             print(f"The check is: {check}")
             check = json.loads(check)
             if check:
                 account = get_account(login)
-                id_ = account["id"]
-                fullname = account["name"]
-                balance = account["balance"]
-                history = account["history"]
-                birthdate = account["birthdate"]
+                self.login_interface(login, password, account)
 
-                name = dict(enumerate(fullname.split(" "))).get(1) or fullname
-                family = dict(enumerate(fullname.split(" "))).get(0) or fullname
-                dad = dict(enumerate(fullname.split(" "))).get(2) or fullname
-                toast("Вы вошли")
-
-                if len(login) == 5:
-                    self.id = login
-                    self.password = password
-                    self.root.ids.screen_manager.current = "main_screen"
-                    print(history)
-                    self.root.ids.balance_user.text = f"{balance} Kvant"
-                    self.root.ids.name_profile_main.text = f"{family} {name} \n{dad}"
-                    self.root.ids.name_main_screen.text = f"{name} >"
-                elif len(login) == 6:
-                    self.root.ids.screen_manager.current = "teacher_screen"
-                    self.root.ids.name_teacher_screen.text = name
-                    self.root.ids.id_teacher_screen.text = id_
-                    self.root.ids.birthday_teacher_screen.text = birthdate
-                elif len(login) == 7:
-                    self.root.ids.screen_manager.current = "admin_screen"
-                    self.root.ids.admin_name.text = account["name"]
-                if password == "12345678":
-                    self.dialog_settings_accounts()
             else:
-                toast("Введены неверные данные")
+                self.send_message("Введены неверные данные")
+                self.root.ids.spinner_login_screen.active = False
         except json.decoder.JSONDecodeError:
         # except TypeError:
             self.send_message("Ошибка сервера")
+            self.root.ids.spinner_login_screen.active = False
+
+    @mainthread
+    def login_interface(self, login, password, account):
+        id_ = account["id"]
+        fullname = account["name"]
+        balance = account["balance"]
+        history = account["history"]
+        birthdate = account["birthdate"]
+
+        name = dict(enumerate(fullname.split(" "))).get(1) or fullname
+        family = dict(enumerate(fullname.split(" "))).get(0) or fullname
+        dad = dict(enumerate(fullname.split(" "))).get(2) or fullname
+        toast("Вы вошли")
+
+        if len(login) == 5:
+            self.id = login
+            self.password = password
+            self.root.ids.screen_manager.current = "main_screen"
+            print(history)
+            self.root.ids.balance_user.text = f"{balance} Kvant"
+            self.root.ids.name_profile_main.text = f"{family} {name} \n{dad}"
+            self.root.ids.name_main_screen.text = f"{name} >"
+        elif len(login) == 6:
+            self.root.ids.screen_manager.current = "teacher_screen"
+            self.root.ids.name_teacher_screen.text = name
+            self.root.ids.id_teacher_screen.text = id_
+            self.root.ids.birthday_teacher_screen.text = birthdate
+        elif len(login) == 7:
+            self.root.ids.screen_manager.current = "teacher_screen"
+            self.root.ids.admin_name.text = account["name"]
+            self.root.ids.name_teacher_screen.text = "Администрация"
+            self.root.ids.birthday_teacher_screen.text = "26.11.1991"
+            self.root.ids.id_teacher_screen.text = 'admin'
+        if password == "12345678":
+            self.dialog_settings_accounts()
+        self.root.ids.spinner_login_screen.active = False
 
     def screen(self, screen_name):
         self.root.ids.screen_manager.current = screen_name
@@ -727,7 +759,7 @@ class MoneyTest(MDApp):
     def confirmation_report(self):
         if not self.dialog_confirmation_report:
             self.dialog_confirmation_report = MDDialog(
-                title=f"Вы точно хотите отправить отчет?",
+                title=f"Вы точно хотите cбросить полугодие?",
                 text="Полугодие будет закрыто и отчет начнется заново",
                 buttons=[
                     MDFlatButton(
@@ -740,11 +772,17 @@ class MoneyTest(MDApp):
                         text="Да",
                         theme_text_color="Custom",
                         text_color=self.theme_cls.primary_color,
-                        on_release=lambda x: self.dialog_report()
+                        on_release=lambda x: self.threading("reset_rating")
                     ),
                 ],
             )
         self.dialog_confirmation_report.open()
+
+    def reset_rating(self):
+        json = kvant_lib.reset_raiting(self.root.ids.login.text, self.root.ids.password.text)
+        requests.post(url=f"{url}/execute", data=json.encode("utf-8"))
+        self.dialog_close("dialog_confirmation_report")
+        print("Конец")
 
 if __name__ == "__main__":
     MoneyTest().run()

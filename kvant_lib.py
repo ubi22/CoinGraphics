@@ -13,6 +13,10 @@ def create_user(id, fio, birthdate, password, my_id, my_password):
     return form_command(my_id, my_password, command, "CreateUser")
 
 
+def reset_raiting(my_id, my_password):
+    return form_command(my_id, my_password, {}, "ResetRaiting")
+
+
 def delete_user(id, my_id, my_password):
     command = {
         "id": id
@@ -52,11 +56,15 @@ def send_mail(to, data: bytes, message, my_id, my_password):
 
 def form_command(my_id, my_password, command: dict, type_):
     wrapper = {
-        "command": {
-            type_: command
-        },
         "login": my_id,
         "password": my_password
     }
+
+    if command != {}:
+        wrapper["command"] = {
+            type_: command
+        }
+    else:
+        wrapper["command"] = type_
 
     return json.dumps(wrapper)
