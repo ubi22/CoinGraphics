@@ -170,7 +170,6 @@ class MoneyTest(MDApp):
                 self.loading_windows(i, birthday)
                 data.append(
                         [f"{generates}", f"{name[i]}", f'{birthday_enter}', f"{password}"])
-            print("sdfghjsdfghsdfghghjasdfasdhjkfgashjdfgashjkdfgasdjkf")
             birthday_list = []
             id_list = []
             name_list = []
@@ -524,7 +523,7 @@ class MoneyTest(MDApp):
 
     def build(self):
         self.theme_cls.theme_style = "Dark"
-        self.theme_cls.primary_palette = "Indigo"
+        self.theme_cls.primary_palette = "DeepPurple"
         return Builder.load_file("kivy.kv")
 
     def settings_balance(self, confirm):
@@ -583,42 +582,6 @@ class MoneyTest(MDApp):
         threading.Thread(target=self.threading_report).start()
         self.dialog_close("dialog_report_open")
         self.dialog_close("dialog_confirmation_report")
-
-    def dialog_connections(self):
-        if not self.dialog_lan:
-            self.dialog_lan = MDDialog(
-                radius=[20, 7, 20, 7],
-                title="Изменить сервер",
-                type="custom",
-                content_cls=MDBoxLayout(
-                    MDTextField(
-                        id="url_field",
-                        hint_text="URL",
-                    ),
-                    orientation="vertical",
-                    spacing="12dp",
-                    size_hint_y=None,
-                    height="60dp",
-                ),
-                buttons=[
-                    MDFlatButton(
-                        text="Отмена",
-                        on_release=lambda x: self.dialog_close("dialog_lan")
-                    ),
-                    MDFlatButton(
-                        text="Изменить",
-                        text_color=self.theme_cls.primary_color,
-                        on_release=lambda x: self.lan_connections()
-                    ),
-                ],
-
-            )
-        self.dialog_lan.open()
-
-    def lan_connections(self):
-        print(self.dialog_lan.content_cls.ids.url_field.text)
-        toast("Отчет придет в течении минуты")
-        self.dialog_close("dialog_report_open")
 
     def update(self):
         login = self.root.ids.login.text
@@ -697,43 +660,44 @@ class MoneyTest(MDApp):
         try:
             login = self.root.ids.login.text
             password = self.root.ids.password.text
-            check = requests.get(f"{url}/check_login_credentials?login={login}&password={hashlib.sha256(password.encode()).hexdigest()}").text
-            print(f"The check is: {check}")
-            check = json.loads(check)
-            if check:
-                account = get_account(login)
-                id_ = account["id"]
-                fullname = account["name"]
-                balance = account["balance"]
-                history = account["history"]
-                birthdate = account["birthdate"]
+            # check = requests.get(f"{url}/check_login_credentials?login={login}&password={hashlib.sha256(password.encode()).hexdigest()}").text
+            # print(f"The check is: {check}")
+            # check = json.loads(check)
+            # if check:
+            #     account = get_account(login)
+            #     id_ = account["id"]
+            #     fullname = account["name"]
+            #     balance = account["balance"]
+            #     history = account["history"]
+            #     birthdate = account["birthdate"]
 
-                name = dict(enumerate(fullname.split(" "))).get(1) or fullname
-                family = dict(enumerate(fullname.split(" "))).get(0) or fullname
-                dad = dict(enumerate(fullname.split(" "))).get(2) or fullname
-                toast("Вы вошли")
+                # name = dict(enumerate(fullname.split(" "))).get(1) or fullname
+                # family = dict(enumerate(fullname.split(" "))).get(0) or fullname
+                # dad = dict(enumerate(fullname.split(" "))).get(2) or fullname
+                # toast("Вы вошли")
 
-                if len(login) == 5:
-                    self.id = login
-                    self.password = password
-                    self.root.ids.screen_manager.current = "main_screen"
-                    print(history)
-                    self.root.ids.balance_user.text = f"{balance} Kvant"
-                    self.root.ids.name_profile_main.text = f"{family} {name} \n{dad}"
-                    self.root.ids.name_main_screen.text = f"{name} >"
-                elif len(login) == 6:
-                    self.root.ids.screen_manager.current = "teacher_screen"
-                    self.root.ids.name_teacher_screen.text = name
-                    self.root.ids.id_teacher_screen.text = id_
-                    self.root.ids.birthday_teacher_screen.text = birthdate
-                elif len(login) == 7:
-                    self.root.ids.screen_manager.current = "admin_screen"
-                    self.root.ids.admin_name.text = account["name"]
-                if password == "12345678":
-                    self.dialog_settings_accounts()
+            if len(login) == 5:
+                # self.id = login
+                # self.password = password
+                self.root.ids.screen_manager.current = "main_screen"
+                # print(history)
+                # self.root.ids.balance_user.text = f"{balance} Kvant"
+                # self.root.ids.name_profile_main.text = f"{family} {name} \n{dad}"
+                # self.root.ids.name_main_screen.text = f"{name} >"
+            elif len(login) == 6:
+                self.root.ids.screen_manager.current = "teacher_screen"
+                # self.root.ids.name_teacher_screen.text = name
+                # self.root.ids.id_teacher_screen.text = id_
+                # self.root.ids.birthday_teacher_screen.text = birthdate
+            elif len(login) == 7:
+                self.root.ids.screen_manager.current = "admin_screen"
+                # self.root.ids.admin_name.text = account["name"]
+            if password == "12345678":
+                self.dialog_settings_accounts()
             else:
                 toast("Введены неверные данные")
-        except json.decoder.JSONDecodeError:
+        # except json.decoder.JSONDecodeError:
+        except TypeError:
             self.send_message("Ошибка сервера")
 
     def screen(self, screen_name):
