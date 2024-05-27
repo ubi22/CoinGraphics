@@ -7,7 +7,7 @@ title = Kvantomat
 package.name = kvantapplication
 
 # (str) Package domain (needed for android/ios packaging)
-package.domain = org.test
+package.domain = org.kvant
 
 # (str) Source code where the main.py live
 source.dir = .
@@ -37,7 +37,7 @@ version = 0.1
 
 # (list) Application requirements
 # comma separated e.g. requirements = sqlite3,kivy
-requirements = python3,kivy,kivymd==1.1.1,android,docutils,pandas,requests
+requirements = python3,kivy,kivymd==1.2.0,requests
 
 # (str) Custom source folders for requirements
 # Sets custom source for any requirements with recipes
