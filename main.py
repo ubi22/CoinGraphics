@@ -998,7 +998,6 @@ class MoneyTest(MDApp):
             self.dialog_accrual = MDDialog(
                 title="Куда отправить?",
                 type="custom",
-                auto_dismiss=False,
                 content_cls=MDBoxLayout(
                     MDTextField(
                         id="password_input",
@@ -1033,11 +1032,15 @@ class MoneyTest(MDApp):
             balance = []
             name_list = []
             enter_list = []
+            total_balance = 0
             for key, item in children.items():
                 if item.get('creator') == data[i][0]:
                     name_list.append(item.get('name'))
                     balance.append(item.get('balance'))
+                    total_balance+=item.get('balance')
             if not name_list == []:
+                name_list.append("Общий баланс:")
+                balance.append(total_balance)
                 enter_list.append(["ФИО", name_list])
                 enter_list.append(["Баланс", balance])
                 enter_list = dict(enter_list)
