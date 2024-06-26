@@ -1,4 +1,10 @@
 <TooltipIcon@MDFloatingActionButton+MDTooltip>
+<MDBackButton@MDRectangleFlatIconButton>
+    text_color: 1,1,1,1
+    icon_color: 1,1,1,1
+    text: 'Назад'
+    icon: "arrow-left"
+    line_color: 0, 0, 0, 0
 <Scr@MDScreen>
     FitImage:
         source: 'scr/background2.jpg'
@@ -13,14 +19,10 @@
         anchor_x: "left"
         size_hint_y: None
 
-
-
         MDNavigationDrawerHeader:
             title: "Уведомление"
             title_color: "#4a4939"
             text: "2 оповещений"
-
-
 
     ScrollView:
 
@@ -39,7 +41,6 @@
                 tertiary_text: "02.11.2009"
                 IconLeftWidget:
                     icon: "decimal-comma-increase"
-
 
 <DrawerClickableItem@MDNavigationDrawerItem>
     focus_color: "#e7e4c0"
@@ -63,7 +64,7 @@ Screen:
 
         MDScreenManager:
             id: screen_manager
-            Scr:
+            Screen:
                 name: "login_screen"
                 MDCard:
                     size_hint: .8, .88
@@ -113,6 +114,12 @@ Screen:
                             active: False
             MDScreen:
                 name: 'main_screen'
+                MDSpinner:
+                    id: spinner_history_student
+                    size_hint: None, None
+                    size: dp(48), dp(48)
+                    active: True
+                    pos_hint: {'center_x': .5, 'center_y': .25}
                 FitImage:
                     source: 'scr/background2.jpg'
                     size_hint_y: .5
@@ -344,7 +351,6 @@ Screen:
                             pos_hint: {"center_x": .5, "center_y": .87}
                             icon_size: "120sp"
                             icon: "account-circle-outline"
-                            on_release: app.file_manager_open(1)
 
                         MDLabel:
                             id: name_profile_main
@@ -390,14 +396,13 @@ Screen:
                             pos_hint: {"center_x": .5, "center_y": .87}
                             icon_size: "120sp"
                             icon: "account-circle-outline"
-                            on_release: app.file_manager_open(1)
 
                         MDLabel:
                             text: "Васильев\nАндрей Витальевич"
                             font_style: "Button"
                             size_hint_y: None
                             halign: "center"
-                            font_size: "30sp"
+                            font_size: "30dp" if platform_device.text == 'windows' else "25sp"
                             pos_hint: {"center_x": .5, "center_y": .74}
                             id: admin_name
                         MDLabel:
@@ -412,13 +417,13 @@ Screen:
                             MDList:
                                 scroll_y: None
                                 OneLineAvatarListItem:
-                                    on_release: app.screen("settingsadmin")
-                                    text: "Добавление аккаунта"
+                                    on_release: app.screen("settings_admin")
+                                    text: "Создать аккаунт"
                                     IconLeftWidget:
                                         icon: "account-plus"
                                 OneLineAvatarListItem:
                                     text: "Создать отчет"
-                                    on_release: app.dialog_report()
+                                    on_release: app.send_message("На вашем устройстве не доступно") if platform_device.text == 'android' else app.dialog_report()
                                     IconLeftWidget:
                                         icon: "table"
                                 OneLineAvatarListItem:
@@ -426,6 +431,11 @@ Screen:
                                     on_release: app.confirmation_report()
                                     IconLeftWidget:
                                         icon: "cloud-refresh"
+                                OneLineAvatarListItem:
+                                    text: "Получить отчет о начислениях"
+                                    on_release:  app.send_message("На вашем устройстве не доступно") if platform_device.text == 'android' else app.accrual_report_dialog()
+                                    IconLeftWidget:
+                                        icon: "table"
                                 OneLineAvatarListItem:
                                     text: "Назад"
                                     on_release: app.screen('teacher_screen')
@@ -437,52 +447,48 @@ Screen:
                             pos_hint: {"center_x": .5, "center_y": .12}
                             on_release: app.screen('login_screen')
             Scr:
-                name:  "settingsadmin"
+                name: "settings_admin"
                 MDFloatLayout:
-                    MDLabel:
-                        text: "Заполините данные\nнового преподавателя"
-                        pos_hint: {"center_x": .5, "center_y": .9}
-                        font_size: '45sp'
-                        halign: 'center'
+                    MDBackButton:
+                        icon_size: "35sp"
+                        text: "[size=30]Назад[/size]"
+                        pos_hint: {"center_x": .2, "center_y": .9}
+                        on_release: app.screen("teacher_screen")
                     MDTextField:
                         id: login_admin_new
                         mode: "rectangle"
                         size_hint: .85, .07
                         width: "400dp"
                         hint_text: "Логин"
-                        pos_hint: {"center_x": .5, "center_y": .75}
-                    MDIconButton:
-                        icon: "scr/repeat.png"
-                        on_release: app.generate()
-                        pos_hint: {"center_x": .88, "center_y": .75}
+                        pos_hint: {"center_x": .5, "center_y": .80}
                     MDTextField:
                         id: password_admin_new
                         mode: "rectangle"
                         size_hint: .85, .07
                         width: "400dp"
                         hint_text: "Пароль"
-                        pos_hint: {"center_x": .5, "center_y": .65}
+                        pos_hint: {"center_x": .5, "center_y": .68}
                     MDTextField:
                         id: name_admin_new
                         mode: "rectangle"
                         size_hint: .85, .07
                         width: "400dp"
                         hint_text: "ФИО"
-                        pos_hint: {"centespr_x": .5, "center_y": .55}
+                        pos_hint: {"center_x": .5, "center_y": .56}
                     MDTextField:
                         id: birthday_admin_new
                         mode: "rectangle"
                         size_hint: .85, .07
                         width: "400dp"
-                        hint_text: "День рождение"
-                        pos_hint: {"center_x": .5, "center_y": .45}
+                        hint_text: "День рождения"
+                        pos_hint: {"center_x": .5, "center_y": .44}
                     MDTextField:
                         id: email_new_admin
                         mode: "rectangle"
                         size_hint: .85, .07
                         width: "400dp"
                         hint_text: "Почта"
-                        pos_hint: {"center_x": .5, "center_y": .35}
+                        pos_hint: {"center_x": .5, "center_y": .32}
                     MDRaisedButton:
                         text: "Создать"
                         text_size: "39sp"
@@ -532,29 +538,53 @@ Screen:
                         spacing: dp(10)
                         padding: dp(20)
                         MDFloatLayout:
-                            adaptive_height: True
-                            MDIconButton:
-                                icon_size: '25sp'
+                            size_hint: 1, .2
+                            MDFillRoundFlatIconButton:
                                 md_bg_color: "#222126"
+                                icon_size: '25sp'
                                 icon_color: "#ffffff"
+                                text: "Админ панель" if id_teacher_screen.text == 'admin' else 'Создать учеников'
                                 icon: "account-star-outline" if id_teacher_screen.text == 'admin' else 'account-plus'
-                                pos_hint: {"center_x": .97, "center_y": .5}
-                                on_release:  app.screen("admin_screen") if id_teacher_screen.text == 'admin' else app.screen("new_users")
+                                pos_hint: {"center_x": .65, "center_y": .8} if platform_device.text == "windows" else {"center_x": .67, "center_y": .8}
+                                on_release:  app.screen("admin_screen") if id_teacher_screen.text == 'admin' else (app.send_message("В разработке") if platform_device.text == "windows" else app.screen("unavailable"))
                             MDTextField:
                                 id: search_students
                                 mode: "round"
-                                size_hint: .75, .40
-                                pos_hint: {"center_x": .5, "center_y": .5}
+                                size_hint: (.7, 0.5 ) if platform_device.text == 'windows' else (.7, 0.32)
+                                pos_hint: {"center_x": .5, "center_y": .3} if platform_device.text == "windows" else {"center_x": .5, "center_y": .3}
                                 hint_text: 'Поиск по ФИО'
                                 on_text: app.threading_search(self.text)
-
-#                            MDIconButton:
-#                                icon: 'magnify'
-#                                pos_hint: {"center_x": .85, "center_y": .5}
+                            MDFillRoundFlatIconButton:
+                                icon_size: '25sp'
+                                md_bg_color: "#222126"
+                                icon_color: "#ffffff"
+                                text: 'Группы'
+                                icon: 'account-group'
+                                pos_hint: {"center_x": .33, "center_y": .8} if platform_device.text == "windows" else {"center_x": .23, "center_y": .8}
+                                on_release: app.threading("screen_group")
                         MDScrollView:
-
+                            size_hint: 1, .8
                             MDList:
                                 id: container
+            Scr: 
+                name: 'history_students'
+                MDSpinner:
+                    id: spinner_history_accruals
+                    size_hint: None, None
+                    size: dp(55), dp(55)
+                    pos_hint: {'center_x': .5, 'center_y': .5}
+                BoxLayout:
+                    orientation: 'vertical'
+                    FloatLayout:
+                        size_hint_y: .05
+                        MDBackButton:
+                            id: button_back_group
+                            pos_hint: {"center_x": .15, "center_y": .1}
+                            on_release: app.screen("screen_students_teachers")
+                    ScrollView:
+                        size_hint_y: .95
+                        MDList:
+                            id: list_history_students_admin
             Scr:
                 name: "new_users"
                 MDBoxLayout:
@@ -562,26 +592,22 @@ Screen:
                     MDFloatLayout:
                         size_hint: 1, .3
                         id: boxlayout
-                        MDCard:
-                            id: card_for_clear
-                            size_hint: .8, .5
-                            pos_hint: {"center_x": .5, "center_y": .6}
-                            elevation: 6
-                            orientation: "vertical"
-                            MDLabel:
-                                id: text_hint_create
-                                pos_hint: {"center_x": .54, "center_y": .5}
-
+                        MDRaisedButton:
+                            text: "Создать в ручную"
+                            pos_hint: {"center_x": .5, "center_y": .8}
+                            on_release: app.screen("screen_manual_creation")
                         MDRaisedButton:
                             id: boxlayout_download
-                            text: 'Загрузите .xls файл'
-                            pos_hint: {"center_x": .5, "center_y": .15}
-                            on_release: app.manager_file_exel_open()
-                        MDIconButton:
-                            icon: 'arrow-left-bold-box-outline'
-                            icon_size: '35sp'
-                            tooltip_text: "Назад"
-                            pos_hint: {"center_x": .95, "center_y": .15}
+                            text: 'Загрузите Excel файл'
+                            pos_hint: {"center_x": .5, "center_y": .5}
+                            on_release: app.manager_file_exel_open() if platform_device.text == "windows" else app.send_message("Не доступно на вашем устройстве")
+                        MDRaisedButton:
+                            id: send_template
+                            text: "Создать учеников" if action_send_message.text == "create" else'Получить шаблон'
+                            pos_hint: {"center_x": .5, "center_y": .2}
+                            on_release: app.threading('create_users_sql') if action_send_message.text == "create" else app.dialog_email_send('template.xlsx')
+                        MDBackButton:
+                            pos_hint: {"center_x": .1, "center_y": .9}
                             on_release: app.screen("teacher_screen")
 
                     MDBoxLayout:
@@ -592,6 +618,87 @@ Screen:
                     ScrollView:
                         MDBoxLayout:
                             id: generate_table
+            Scr:
+                name: 'screen_manual_creation'
+                MDRaisedButton:
+                    text: ""
+                MDFloatingActionButton:
+                    icon: "plus"
+                    pos_hint: {"center_x": .85, "center_y": .1}
+            Scr:
+                name: 'groups_list'
+                MDFloatLayout:
+                    size_hint: 1, .1
+                    md_bg_color: 1, 1, 1, 0.07
+                    pos_hint: {"center_x": .5, "center_y": .96}
+                MDBoxLayout:
+                    orientation: "vertical"
+                    MDBackButton:
+                        pos_hint: {"center_x": .1, "center_y": .5}
+                        on_release: app.screen("teacher_screen")
+                    MDTabs:
+                        background_color: 1,1,1,0
+                        Tab:
+                            title: "Мои ученики"
+                            MDSpinner:
+                                id: spinner_my_students
+                                size_hint: None, None
+                                size: dp(75), dp(75)
+                                pos_hint: {"center_x": .5, "center_y": .5}
+                            ScrollView:
+                                MDList:
+                                    id: my_list_students
+                        Tab:
+                            title: "Другие группы"
+                            MDSpinner:
+                                id: spinner_teachers
+                                size_hint: None, None
+                                size: dp(75), dp(75)
+                                pos_hint: {"center_x": .5, "center_y": .5}
+                            ScrollView:
+                                MDList:
+                                    id: list_teachers
+            Scr:
+                name: "screen_students_teachers"
+                MDSpinner:
+                    id: spinner_students_teacher
+                    size_hint: None, None
+                    size: dp(75), dp(75)
+                    pos_hint: {"center_x": .5, "center_y": .5}
+                MDBoxLayout:
+                    orientation: 'vertical'
+                    MDFloatLayout:
+                        adaptive_height: True
+                        size_hint: 1, .08
+                        MDBackButton:
+                            pos_hint: {"center_x": .1, "center_y": .5}
+                            on_release: app.screen("groups_list")
+                        MDRaisedButton:
+                            text: "Начислить всем"
+                            pos_hint: {"center_x": .75, "center_y": .5}
+                            on_release: app.give_to_all_dialog('not group', '')
+                    MDScrollView:
+                        size_hint: 1, .92
+                        MDList:
+                            id: list_students_other_teachers
+            Scr:
+                name: "unavailable"
+                FitImage:
+                    source: "scr/android_font.png"
+                MDFlatButton:
+                    text: "[color=#000]Понятно[/color]"
+                    text_color: 0,0,0,1
+                    pos_hint: {"center_x": .5, "center_y": .25}
+                    on_release: app.screen("teacher_screen")
+
+            MDScreen:
+                name: "screen_admin"
+                MDLabel:
+                    id: platform_device
+                    text: ""
+                MDLabel:
+                    id: action_send_message
+                    text: ""
         MDNavigationDrawer:
             id: nav_drawer
             anchor: "right"
